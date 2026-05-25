@@ -1,13 +1,538 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(250)
+  contactNo    String?       @db.VarChar(50)
+  email        String?       @db.VarChar(250)
+  username     String        @unique @db.VarChar(50)
+  passwordHash String        @db.VarChar(250)
+  role         Role          @default(USER)
+  createdAt    DateTime      @default(now())
+  accessRights AccessRight[]
+}
+
+model Category {
+  id            Int            @id @default(autoincrement())
+  name          String         @db.VarChar(250)
+  products      ProductMaster[]
+  subCategories SubCategory[]
+}
+
+model SubCategory {
+  id         Int            @id @default(autoincrement())
+  name       String         @db.VarChar(250)
+  categoryId Int
+  category   Category       @relation(fields: [categoryId], references: [id])
+  products   ProductMaster[]
+}
+
+model UnitMaster {
+  id       Int            @id @default(autoincrement())
+  name     String         @db.VarChar(250)
+  products ProductMaster[]
+}
+
+model ProductMaster {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(250)
+  categoryId    Int
+  subCategoryId Int?
+  description   String?  @db.Text
+  unitId        Int
+  isConsumable  Boolean  @default(false)
+  mil           Decimal  @default(0) @db.Decimal(18, 2)
+  item          String?  @db.VarChar(250)
+  itemCode      String?  @db.VarChar(250)
+
+  category    Category     @relation(fields: [categoryId], references: [id])
+  subCategory SubCategory? @relation(fields: [subCategoryId], references: [id])
+  unit        UnitMaster   @relation(fields: [unitId], references: [id])
+
+  purchaseDetails        PurchaseDetail[]
+  purchaseChallanDetails PurchaseChallanDetail[]
+  stocks                 Stock[]
+  issueDetails           IssueDetail[]
+  issueTransferDetails   IssueTransferDetail[]
+  orderIssueDetails      OrderIssueDetail[]
+  returnDetails          ReturnDetail[]
+  returnRepairDetails    ReturnRepairDetail[]
+  losses                 Loss[]
+  scraps                 Scrap[]
+  scrapFromGodownDetails ScrapFromGodownDetail[]
+  scrapFromStocks        ScrapFromStock[]
+  repairFromGodownDetails RepairFromGodownDetail[]
+  expenseManagers        ExpenseManager[]
+}
+
+model Buyer {
+  id         Int     @id @default(autoincrement())
+  name       String  @db.VarChar(250)
+  address    String? @db.Text
+  city       String? @db.VarChar(250)
+  province   String? @db.VarChar(250)
+  pincode    String? @db.VarChar(10)
+  phoneNo    String? @db.VarChar(20)
+  gst        String? @db.VarChar(50)
+
+  issues          Issue[]
+  issueTransfers  IssueTransfer[]
+  orderIssues     OrderIssue[]
+  returns         Return[]
+  returnRepairs   ReturnRepair[]
+  losses          Loss[]
+  scraps          Scrap[]
+  transports      Transport[]
+  expenseManagers ExpenseManager[]
+}
+
+model Consignee {
+  id         Int     @id @default(autoincrement())
+  name       String  @db.VarChar(250)
+  address    String? @db.Text
+  city       String? @db.VarChar(250)
+  province   String? @db.VarChar(250)
+  pincode    String? @db.VarChar(10)
+  phoneNo    String? @db.VarChar(20)
+  gst        String? @db.VarChar(50)
+
+  issues           Issue[]
+  issueTransfers   IssueTransfer[]
+  orderIssues      OrderIssue[]
+  transports       Transport[]
+  scrapFromGodowns ScrapFromGodown[]
+  repairFromGodowns RepairFromGodown[]
+}
+
+model Supplier {
+  id         Int     @id @default(autoincrement())
+  name       String  @db.VarChar(250)
+  address    String? @db.Text
+  city       String? @db.VarChar(250)
+  province   String? @db.VarChar(250)
+  pincode    String? @db.VarChar(10)
+  phoneNo    String? @db.VarChar(20)
+  gst        String? @db.VarChar(50)
+
+  purchases         Purchase[]
+  purchaseChallans  PurchaseChallan[]
+  scrapFromGodowns  ScrapFromGodown[]
+  repairFromGodowns RepairFromGodown[]
+}
+
+model ExpenseType {
+  id       Int              @id @default(autoincrement())
+  name     String           @db.VarChar(300)
+  expenses ExpenseManager[]
+}
+
+model FormMaster {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(50)
+  accessRights AccessRight[]
+}
+
+model AccessRight {
+  id      Int     @id @default(autoincrement())
+  userId  Int
+  formId  Int
+  canEdit Boolean @default(false)
+  canSave Boolean @default(false)
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  form FormMaster @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, formId])
+}
+
+model Purchase {
+  id         Int      @id @default(autoincrement())
+  invoiceNo  String   @db.VarChar(50)
+  supplierId Int
+  date       DateTime @db.Date
+  total      Decimal  @db.Decimal(18, 4)
+  gst        Decimal  @default(0) @db.Decimal(18, 4)
+  netAmount  Decimal  @default(0) @db.Decimal(18, 4)
+  vehicleNo  String?  @db.VarChar(20)
+  transport  String?  @db.VarChar(300)
+  createdAt  DateTime @default(now())
+
+  supplier Supplier         @relation(fields: [supplierId], references: [id])
+  details  PurchaseDetail[]
+  stocks   Stock[]
+}
+
+model PurchaseDetail {
+  id          Int     @id @default(autoincrement())
+  purchaseId  Int
+  productId   Int
+  description String? @db.Text
+  hsn         String? @db.VarChar(50)
+  quantity    Decimal @db.Decimal(18, 4)
+  price       Decimal @db.Decimal(18, 4)
+  freight     Decimal @default(0) @db.Decimal(18, 4)
+  total       Decimal @db.Decimal(18, 4)
+
+  purchase Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model PurchaseChallan {
+  id         Int      @id @default(autoincrement())
+  challanNo  String   @db.VarChar(50)
+  date       DateTime @db.Date
+  supplierId Int
+  total      Decimal  @db.Decimal(18, 4)
+  gst        Decimal  @default(0) @db.Decimal(18, 4)
+  createdAt  DateTime @default(now())
+
+  supplier Supplier                @relation(fields: [supplierId], references: [id])
+  details  PurchaseChallanDetail[]
+}
+
+model PurchaseChallanDetail {
+  id                Int     @id @default(autoincrement())
+  purchaseChallanId Int
+  productId         Int
+  description       String? @db.Text
+  hsn               String? @db.VarChar(50)
+  quantity          Decimal @db.Decimal(18, 4)
+  price             Decimal @db.Decimal(18, 4)
+  freight           Decimal @default(0) @db.Decimal(18, 4)
+  total             Decimal @db.Decimal(18, 4)
+
+  purchaseChallan PurchaseChallan @relation(fields: [purchaseChallanId], references: [id], onDelete: Cascade)
+  product         ProductMaster   @relation(fields: [productId], references: [id])
+}
+
+model Stock {
+  id            Int      @id @default(autoincrement())
+  purchaseId    Int?
+  productId     Int
+  quantity      Decimal  @db.Decimal(18, 4)
+  price         Decimal  @db.Decimal(18, 4)
+  addedDate     DateTime @db.Date
+  transactionId Int      @default(0)
+
+  purchase          Purchase?          @relation(fields: [purchaseId], references: [id])
+  product           ProductMaster      @relation(fields: [productId], references: [id])
+  issueStockRecords IssueStockRecord[]
+  scrapFromStocks   ScrapFromStock[]
+}
+
+model Issue {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.Date
+  consigneeId Int
+  buyerId     Int
+  total       Decimal  @db.Decimal(18, 4)
+  vehicleNo   String?  @db.VarChar(20)
+  transport   String?  @db.VarChar(300)
+  freight     Decimal  @default(0) @db.Decimal(18, 4)
+  remark      String?  @db.Text
+  jobNo       String?  @db.VarChar(50)
+  createdAt   DateTime @default(now())
+
+  consignee           Consignee            @relation(fields: [consigneeId], references: [id])
+  buyer               Buyer                @relation(fields: [buyerId], references: [id])
+  details             IssueDetail[]
+  stockRecords        IssueStockRecord[]
+  returnDetails       ReturnDetail[]
+  returnRepairDetails ReturnRepairDetail[]
+}
+
+model IssueDetail {
+  id         Int     @id @default(autoincrement())
+  issueId    Int
+  productId  Int
+  quantity   Decimal @db.Decimal(18, 4)
+  price      Decimal @db.Decimal(18, 4)
+  freight    Decimal @default(0) @db.Decimal(18, 4)
+  total      Decimal @db.Decimal(18, 4)
+  issuePrice Decimal @default(0) @db.Decimal(18, 4)
+  remark     String? @db.Text
+
+  issue   Issue         @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  product ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model IssueStockRecord {
+  id       Int     @id @default(autoincrement())
+  issueId  Int
+  stockId  Int
+  quantity Decimal @db.Decimal(18, 4)
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  stock Stock @relation(fields: [stockId], references: [id])
+}
+
+model IssueTransfer {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.Date
+  consigneeId Int
+  buyerId     Int
+  total       Decimal  @db.Decimal(18, 4)
+  vehicleNo   String?  @db.VarChar(20)
+  transport   String?  @db.VarChar(300)
+  freight     Decimal  @default(0) @db.Decimal(18, 4)
+  remark      String?  @db.Text
+  jobNo       String?  @db.VarChar(50)
+  createdAt   DateTime @default(now())
+
+  consignee Consignee             @relation(fields: [consigneeId], references: [id])
+  buyer     Buyer                 @relation(fields: [buyerId], references: [id])
+  details   IssueTransferDetail[]
+}
+
+model IssueTransferDetail {
+  id              Int     @id @default(autoincrement())
+  issueTransferId Int
+  productId       Int
+  quantity        Decimal @db.Decimal(18, 4)
+  price           Decimal @db.Decimal(18, 4)
+  freight         Decimal @default(0) @db.Decimal(18, 4)
+  total           Decimal @db.Decimal(18, 4)
+  issuePrice      Decimal @default(0) @db.Decimal(18, 4)
+
+  issueTransfer IssueTransfer @relation(fields: [issueTransferId], references: [id], onDelete: Cascade)
+  product       ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model OrderIssue {
+  id             Int      @id @default(autoincrement())
+  issueChallanNo String   @db.VarChar(50)
+  issueDate      DateTime @db.Date
+  consigneeId    Int
+  buyerId        Int
+  remark         String?  @db.Text
+  jobNo          String?  @db.VarChar(50)
+  isCompleted    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  consignee Consignee          @relation(fields: [consigneeId], references: [id])
+  buyer     Buyer              @relation(fields: [buyerId], references: [id])
+  details   OrderIssueDetail[]
+}
+
+model OrderIssueDetail {
+  id           Int     @id @default(autoincrement())
+  orderIssueId Int
+  productId    Int
+  quantity     Decimal @db.Decimal(18, 4)
+  remark       String? @db.Text
+
+  orderIssue OrderIssue    @relation(fields: [orderIssueId], references: [id], onDelete: Cascade)
+  product    ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model Return {
+  id         Int      @id @default(autoincrement())
+  invoiceNo  String?  @db.VarChar(150)
+  buyerId    Int
+  vehicleNo  String?  @db.VarChar(50)
+  transport  String?  @db.VarChar(300)
+  freight    Decimal  @default(0) @db.Decimal(18, 4)
+  returnDate DateTime @db.Date
+  total      Decimal  @db.Decimal(18, 4)
+  jobNo      String?  @db.VarChar(50)
+  remark     String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  buyer   Buyer          @relation(fields: [buyerId], references: [id])
+  details ReturnDetail[]
+}
+
+model ReturnDetail {
+  id             Int     @id @default(autoincrement())
+  returnId       Int
+  productId      Int
+  returnQuantity Decimal @db.Decimal(18, 4)
+  issuePrice     Decimal @default(0) @db.Decimal(18, 4)
+  returnPrice    Decimal @default(0) @db.Decimal(18, 4)
+  freight        Decimal @default(0) @db.Decimal(18, 4)
+  issueDetailId  Int?
+  issueId        Int?
+
+  return  Return        @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  product ProductMaster @relation(fields: [productId], references: [id])
+  issue   Issue?        @relation(fields: [issueId], references: [id])
+}
+
+model ReturnRepair {
+  id          Int      @id @default(autoincrement())
+  invoiceNo   String?  @db.VarChar(150)
+  buyerId     Int
+  vehicleNo   String?  @db.VarChar(50)
+  transport   String?  @db.VarChar(300)
+  freight     Decimal  @default(0) @db.Decimal(18, 4)
+  receiveDate DateTime @db.Date
+  total       Decimal  @db.Decimal(18, 4)
+  jobNo       String?  @db.VarChar(50)
+  createdAt   DateTime @default(now())
+
+  buyer   Buyer                @relation(fields: [buyerId], references: [id])
+  details ReturnRepairDetail[]
+}
+
+model ReturnRepairDetail {
+  id                   Int     @id @default(autoincrement())
+  returnRepairId       Int
+  productId            Int
+  returnRepairQuantity Decimal @db.Decimal(18, 4)
+  issuePrice           Decimal @default(0) @db.Decimal(18, 4)
+  returnPrice          Decimal @default(0) @db.Decimal(18, 4)
+  freight              Decimal @default(0) @db.Decimal(18, 4)
+  issueDetailId        Int?
+  issueId              Int?
+
+  returnRepair ReturnRepair  @relation(fields: [returnRepairId], references: [id], onDelete: Cascade)
+  product      ProductMaster @relation(fields: [productId], references: [id])
+  issue        Issue?        @relation(fields: [issueId], references: [id])
+}
+
+model Loss {
+  id             Int      @id @default(autoincrement())
+  issueDetailsId Int?
+  buyerId        Int
+  jobNo          String?  @db.VarChar(50)
+  productId      Int
+  quantity       Decimal  @db.Decimal(18, 4)
+  price          Decimal  @db.Decimal(18, 4)
+  date           DateTime @db.Date
+
+  buyer   Buyer         @relation(fields: [buyerId], references: [id])
+  product ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model Scrap {
+  id             Int      @id @default(autoincrement())
+  issueDetailsId Int?
+  buyerId        Int
+  jobNo          String?  @db.VarChar(50)
+  productId      Int
+  quantity       Decimal  @db.Decimal(18, 4)
+  price          Decimal  @db.Decimal(18, 4)
+  date           DateTime @db.Date
+
+  buyer   Buyer         @relation(fields: [buyerId], references: [id])
+  product ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model ScrapFromGodown {
+  id          Int      @id @default(autoincrement())
+  challanNo   String?  @db.VarChar(50)
+  date        DateTime @db.Date
+  consigneeId Int
+  supplierId  Int
+  freight     Decimal  @default(0) @db.Decimal(18, 3)
+  total       Decimal  @db.Decimal(18, 3)
+  remark      String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  consignee Consignee              @relation(fields: [consigneeId], references: [id])
+  supplier  Supplier               @relation(fields: [supplierId], references: [id])
+  details   ScrapFromGodownDetail[]
+}
+
+model ScrapFromGodownDetail {
+  id                Int     @id @default(autoincrement())
+  scrapFromGodownId Int
+  productId         Int
+  quantity          Decimal @db.Decimal(18, 3)
+  remark            String? @db.VarChar(300)
+
+  scrapFromGodown ScrapFromGodown @relation(fields: [scrapFromGodownId], references: [id], onDelete: Cascade)
+  product         ProductMaster   @relation(fields: [productId], references: [id])
+}
+
+model ScrapFromStock {
+  id        Int      @id @default(autoincrement())
+  stockId   Int
+  productId Int
+  quantity  Decimal  @db.Decimal(18, 2)
+  date      DateTime @db.Date
+
+  stock   Stock         @relation(fields: [stockId], references: [id])
+  product ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model RepairFromGodown {
+  id          Int      @id @default(autoincrement())
+  challanNo   String?  @db.VarChar(50)
+  date        DateTime @db.Date
+  consigneeId Int
+  supplierId  Int
+  freight     Decimal  @default(0) @db.Decimal(18, 3)
+  total       Decimal  @db.Decimal(18, 3)
+  remark      String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  consignee Consignee                @relation(fields: [consigneeId], references: [id])
+  supplier  Supplier                 @relation(fields: [supplierId], references: [id])
+  details   RepairFromGodownDetail[]
+}
+
+model RepairFromGodownDetail {
+  id                 Int     @id @default(autoincrement())
+  repairFromGodownId Int
+  productId          Int
+  quantity           Decimal @db.Decimal(18, 3)
+  remark             String? @db.VarChar(300)
+
+  repairFromGodown RepairFromGodown @relation(fields: [repairFromGodownId], references: [id], onDelete: Cascade)
+  product          ProductMaster    @relation(fields: [productId], references: [id])
+}
+
+model Transport {
+  id              Int       @id @default(autoincrement())
+  consigneeId     Int
+  date            DateTime  @db.Date
+  buyerId         Int
+  fromLocation    String?   @db.VarChar(300)
+  toLocation      String?   @db.VarChar(300)
+  transporterName String?   @db.VarChar(300)
+  truckNo         String?   @db.VarChar(100)
+  lrDate          DateTime? @db.Date
+  truckType       String?   @db.VarChar(300)
+  dala            String?   @db.VarChar(300)
+  freight         Decimal   @default(0) @db.Decimal(18, 2)
+  unloadedDate    DateTime? @db.Date
+  createdAt       DateTime  @default(now())
+
+  consignee Consignee @relation(fields: [consigneeId], references: [id])
+  buyer     Buyer     @relation(fields: [buyerId], references: [id])
+}
+
+model ExpenseManager {
+  id            Int      @id @default(autoincrement())
+  buyerId       Int
+  jobCardNo     String?  @db.VarChar(50)
+  expenseDate   DateTime @db.Date
+  expenseTypeId Int
+  amount        Decimal  @db.Decimal(18, 4)
+  remark        String?  @db.Text
+  productId     Int?
+  createdAt     DateTime @default(now())
+
+  buyer       Buyer          @relation(fields: [buyerId], references: [id])
+  expenseType ExpenseType    @relation(fields: [expenseTypeId], references: [id])
+  product     ProductMaster? @relation(fields: [productId], references: [id])
+}
+
+model Logging {
+  id        Int      @id @default(autoincrement())
+  errorText String?  @db.Text
+  query     String?  @db.Text
+  timestamp DateTime @default(now())
 }
