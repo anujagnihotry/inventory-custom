@@ -33,6 +33,23 @@ export async function GET(request: NextRequest) {
   }
 }
 
+async function generateItemCode(): Promise<string> {
+  // Find the highest existing SC-prefixed item code
+  const last = await prisma.productMaster.findFirst({
+    where: { itemCode: { startsWith: "SC" } },
+    orderBy: { itemCode: "desc" },
+    select: { itemCode: true },
+  });
+
+  let nextNum = 1;
+  if (last?.itemCode) {
+    const num = parseInt(last.itemCode.replace("SC", ""), 10);
+    if (!isNaN(num)) nextNum = num + 1;
+  }
+
+  return `SC${String(nextNum).padStart(4, "0")}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -45,7 +62,6 @@ export async function POST(request: NextRequest) {
       isConsumable,
       mil,
       item,
-      itemCode,
     } = body;
 
     if (!name) {
@@ -54,6 +70,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const itemCode = await generateItemCode();
 
     const product = await prisma.productMaster.create({
       data: {
@@ -65,7 +83,7 @@ export async function POST(request: NextRequest) {
         isConsumable: isConsumable ?? false,
         mil: mil || 0,
         item: item || null,
-        itemCode: itemCode || null,
+        itemCode,
       },
       include: {
         category: true,

@@ -28,7 +28,6 @@ const productSchema = z.object({
   isConsumable: z.boolean().optional(),
   mil: z.string().optional(),
   item: z.string().optional(),
-  itemCode: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -77,7 +76,6 @@ export default function ProductsPage() {
       isConsumable: false,
       mil: "",
       item: "",
-      itemCode: "",
     },
   });
 
@@ -186,7 +184,6 @@ export default function ProductsPage() {
       isConsumable: item.isConsumable || false,
       mil: item.mil || "",
       item: item.item || "",
-      itemCode: item.itemCode || "",
     });
     setDialogOpen(true);
   };
@@ -223,7 +220,6 @@ export default function ProductsPage() {
         isConsumable: false,
         mil: "",
         item: "",
-        itemCode: "",
       });
     }
   };
@@ -306,8 +302,10 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="itemCode">Item Code</Label>
-                  <Input id="itemCode" {...form.register("itemCode")} />
+                  <Label>Item Code</Label>
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {editingItem?.itemCode ?? "Auto-generated (e.g. SC0001)"}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
