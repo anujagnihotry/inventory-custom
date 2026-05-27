@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Pencil, Trash2, ArrowLeft, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowLeft, Save, Eye } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +44,22 @@ interface PurchaseRow {
   supplier: { id: number; name: string };
 }
 
+interface PurchaseDetail {
+  id: number;
+  productId: number;
+  description: string | null;
+  hsn: string | null;
+  quantity: number;
+  price: number;
+  freight: number;
+  total: number;
+  product: { id: number; name: string };
+}
+
+interface PurchaseFull extends PurchaseRow {
+  details: PurchaseDetail[];
+}
+
 // ─── Default values ──────────────────────────────────────────────────────────
 
 const emptyItem = (): PurchaseItem => ({
@@ -59,7 +75,8 @@ const emptyItem = (): PurchaseItem => ({
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function PurchasesPage() {
-  const [mode, setMode] = useState<"list" | "form">("list");
+  const [mode, setMode] = useState<"list" | "form" | "view">("list");
+  const [viewingPurchase, setViewingPurchase] = useState<PurchaseFull | null>(null);
   const [purchases, setPurchases] = useState<PurchaseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -193,6 +210,18 @@ export default function PurchasesPage() {
     }
   };
 
+  const openViewForm = async (purchase: PurchaseRow) => {
+    try {
+      const res = await fetch(`/api/transactions/purchases/${purchase.id}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setViewingPurchase(data);
+      setMode("view");
+    } catch {
+      toast.error("Failed to load purchase details");
+    }
+  };
+
   // ─── Save ─────────────────────────────────────────────────────────────────
 
   const handleSave = async () => {
@@ -310,17 +339,15 @@ export default function PurchasesPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => openEditForm(row.original)}
-          >
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" title="View" onClick={() => openViewForm(row.original)}>
+            <Eye className="h-4 w-4 text-blue-500" />
+          </Button>
+          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEditForm(row.original)}>
             <Pencil className="h-4 w-4" />
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
+            variant="ghost" size="icon" title="Delete"
             onClick={() => handleDelete(row.original.id)}
             disabled={deleting === row.original.id}
           >
@@ -330,6 +357,103 @@ export default function PurchasesPage() {
       ),
     },
   ];
+
+  // ─── Render: View ────────────────────────────────────────────────────────
+
+  if (mode === "view" && viewingPurchase) {
+    const p = viewingPurchase;
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => { setViewingPurchase(null); setMode("list"); }}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-2xl font-bold">Purchase — {p.invoiceNo}</h1>
+          </div>
+          <Button onClick={() => openEditForm(p)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit
+          </Button>
+        </div>
+
+        {/* Header */}
+        <div className="rounded-md border p-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+            {[
+              ["Invoice No", p.invoiceNo],
+              ["Supplier", p.supplier?.name],
+              ["Date", p.date ? new Date(p.date).toLocaleDateString("en-IN") : "-"],
+              ["Vehicle No", p.vehicleNo || "-"],
+              ["Transport", p.transport || "-"],
+            ].map(([label, value]) => (
+              <div key={label} className="space-y-1">
+                <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">{label}</p>
+                <p className="font-semibold">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Line Items */}
+        <div className="rounded-md border">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold">Purchase Details</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-3 py-2 text-left font-medium w-10">#</th>
+                  <th className="px-3 py-2 text-left font-medium">Product</th>
+                  <th className="px-3 py-2 text-left font-medium">Description</th>
+                  <th className="px-3 py-2 text-left font-medium">HSN</th>
+                  <th className="px-3 py-2 text-right font-medium">Qty</th>
+                  <th className="px-3 py-2 text-right font-medium">Price</th>
+                  <th className="px-3 py-2 text-right font-medium">Freight</th>
+                  <th className="px-3 py-2 text-right font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {p.details.map((d, i) => (
+                  <tr key={d.id} className="border-b">
+                    <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                    <td className="px-3 py-2">{d.product?.name}</td>
+                    <td className="px-3 py-2">{d.description || "-"}</td>
+                    <td className="px-3 py-2">{d.hsn || "-"}</td>
+                    <td className="px-3 py-2 text-right">{Number(d.quantity).toLocaleString("en-IN")}</td>
+                    <td className="px-3 py-2 text-right">{Number(d.price).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                    <td className="px-3 py-2 text-right">{Number(d.freight).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                    <td className="px-3 py-2 text-right font-medium">{Number(d.total).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Totals */}
+        <div className="rounded-md border p-4">
+          <div className="flex justify-end">
+            <div className="w-full max-w-sm space-y-3 text-sm">
+              {[
+                ["Sub Total", Number(p.total).toLocaleString("en-IN", { minimumFractionDigits: 2 })],
+                ["GST", Number(p.gst).toLocaleString("en-IN", { minimumFractionDigits: 2 })],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between">
+                  <span className="font-medium">{label}:</span>
+                  <span>{value}</span>
+                </div>
+              ))}
+              <div className="flex justify-between border-t pt-3 text-base font-bold">
+                <span>Net Amount:</span>
+                <span>{Number(p.netAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ─── Render: List view ────────────────────────────────────────────────────
 
