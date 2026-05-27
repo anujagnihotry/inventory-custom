@@ -98,11 +98,12 @@ export default function CategoriesPage() {
       const res = await fetch(`/api/masters/categories/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete category");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete category");
       toast.success("Category deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete category");
+      toast.error(error instanceof Error ? error.message : "Failed to delete category");
     } finally {
       setDeleting(null);
     }

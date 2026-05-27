@@ -87,14 +87,12 @@ export default function SubCategoriesPage() {
       const res = await fetch(`/api/masters/subcategories/${id}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        toast.success("Sub-category deleted");
-        fetchData();
-      } else {
-        toast.error("Failed to delete");
-      }
-    } catch {
-      toast.error("Failed to delete");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete sub-category");
+      toast.success("Sub-category deleted");
+      fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete sub-category");
     }
   };
 

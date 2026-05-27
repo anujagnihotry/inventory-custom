@@ -128,11 +128,12 @@ export default function ConsigneesPage() {
       const res = await fetch(`/api/masters/consignees/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete consignee");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete consignee");
       toast.success("Consignee deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete consignee");
+      toast.error(error instanceof Error ? error.message : "Failed to delete consignee");
     } finally {
       setDeleting(null);
     }

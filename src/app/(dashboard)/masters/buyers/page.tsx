@@ -128,11 +128,12 @@ export default function BuyersPage() {
       const res = await fetch(`/api/masters/buyers/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete buyer");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete buyer");
       toast.success("Buyer deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete buyer");
+      toast.error(error instanceof Error ? error.message : "Failed to delete buyer");
     } finally {
       setDeleting(null);
     }

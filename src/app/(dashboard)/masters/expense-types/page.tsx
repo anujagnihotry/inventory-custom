@@ -100,11 +100,12 @@ export default function ExpenseTypesPage() {
       const res = await fetch(`/api/masters/expense-types/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete expense type");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete expense type");
       toast.success("Expense type deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete expense type");
+      toast.error(error instanceof Error ? error.message : "Failed to delete expense type");
     } finally {
       setDeleting(null);
     }

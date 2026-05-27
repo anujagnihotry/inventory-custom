@@ -98,11 +98,12 @@ export default function UnitsPage() {
       const res = await fetch(`/api/masters/units/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete unit");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete unit");
       toast.success("Unit deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete unit");
+      toast.error(error instanceof Error ? error.message : "Failed to delete unit");
     } finally {
       setDeleting(null);
     }

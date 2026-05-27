@@ -188,11 +188,12 @@ export default function ProductsPage() {
       const res = await fetch(`/api/masters/products/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete product");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete product");
       toast.success("Product deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete product");
+      toast.error(error instanceof Error ? error.message : "Failed to delete product");
     } finally {
       setDeleting(null);
     }

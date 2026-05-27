@@ -128,11 +128,12 @@ export default function SuppliersPage() {
       const res = await fetch(`/api/masters/suppliers/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete supplier");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete supplier");
       toast.success("Supplier deleted");
       fetchData();
     } catch (error) {
-      toast.error("Failed to delete supplier");
+      toast.error(error instanceof Error ? error.message : "Failed to delete supplier");
     } finally {
       setDeleting(null);
     }
