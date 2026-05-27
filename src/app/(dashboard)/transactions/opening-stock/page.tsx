@@ -120,6 +120,10 @@ export default function OpeningStockPage() {
   };
 
   const columns: ColumnDef<StockRow>[] = [
+    {
+      accessorKey: "addedDate", header: "Date",
+      cell: ({ row }) => row.original.addedDate ? new Date(row.original.addedDate).toLocaleDateString("en-IN") : "",
+    },
     { accessorFn: (row) => row.product?.name, id: "productName", header: "Product" },
     {
       accessorKey: "quantity", header: "Quantity",
