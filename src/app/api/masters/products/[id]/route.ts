@@ -49,7 +49,6 @@ export async function PUT(
       isConsumable,
       mil,
       item,
-      itemCode,
     } = body;
 
     if (!name) {
@@ -70,7 +69,7 @@ export async function PUT(
         isConsumable: isConsumable ?? false,
         mil: mil || 0,
         item: item || null,
-        itemCode: itemCode || null,
+        // itemCode is never updated — it is auto-generated on creation and immutable
       },
       include: {
         category: true,
