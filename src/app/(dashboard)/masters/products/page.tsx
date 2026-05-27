@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,9 +24,7 @@ const productSchema = z.object({
   subCategoryId: z.string().optional(),
   unitId: z.string().min(1, "Unit is required"),
   description: z.string().optional(),
-  isConsumable: z.boolean().optional(),
   mil: z.string().optional(),
-  item: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -73,9 +70,7 @@ export default function ProductsPage() {
       subCategoryId: "",
       unitId: "",
       description: "",
-      isConsumable: false,
       mil: "",
-      item: "",
     },
   });
 
@@ -181,9 +176,7 @@ export default function ProductsPage() {
       subCategoryId: item.subCategoryId ? String(item.subCategoryId) : "",
       unitId: String(item.unitId),
       description: item.description || "",
-      isConsumable: item.isConsumable || false,
       mil: item.mil || "",
-      item: item.item || "",
     });
     setDialogOpen(true);
   };
@@ -217,9 +210,7 @@ export default function ProductsPage() {
         subCategoryId: "",
         unitId: "",
         description: "",
-        isConsumable: false,
         mil: "",
-        item: "",
       });
     }
   };
@@ -244,11 +235,6 @@ export default function ProductsPage() {
     {
       accessorKey: "itemCode",
       header: "Item Code",
-    },
-    {
-      accessorKey: "isConsumable",
-      header: "Consumable",
-      cell: ({ row }) => (row.original.isConsumable ? "Yes" : "No"),
     },
     {
       id: "actions",
@@ -367,24 +353,8 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="item">Item</Label>
-                  <Input id="item" {...form.register("item")} />
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="mil">MIL Number</Label>
                   <Input id="mil" {...form.register("mil")} />
-                </div>
-
-                <div className="flex items-center space-x-2 pt-6">
-                  <Checkbox
-                    id="isConsumable"
-                    checked={form.watch("isConsumable")}
-                    onCheckedChange={(checked) =>
-                      form.setValue("isConsumable", checked === true)
-                    }
-                  />
-                  <Label htmlFor="isConsumable">Is Consumable</Label>
                 </div>
               </div>
 
