@@ -187,7 +187,7 @@ export default function StockPage() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Stock History — {historyProduct?.productName}
@@ -220,16 +220,18 @@ export default function StockPage() {
               </div>
 
               {/* Timeline table */}
-              <div className="overflow-x-auto rounded-md border">
+              <div className="rounded-md border">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50 border-b">
-                      <th className="px-3 py-2 text-left font-medium">Date</th>
-                      <th className="px-3 py-2 text-left font-medium">Type</th>
-                      <th className="px-3 py-2 text-right font-medium">Qty</th>
-                      <th className="px-3 py-2 text-right font-medium">Price</th>
-                      <th className="px-3 py-2 text-left font-medium">Details</th>
-                      <th className="px-3 py-2 text-right font-medium">Balance</th>
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Date</th>
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Type</th>
+                      <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Qty</th>
+                      <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Price</th>
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Invoice / Supplier</th>
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Buyer</th>
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Job No</th>
+                      <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Balance</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -244,27 +246,31 @@ export default function StockPage() {
                         <td className={`px-3 py-2 font-medium whitespace-nowrap ${typeColor[entry.type]}`}>
                           {entry.sign === "+" ? "▲" : "▼"} {entry.type}
                         </td>
-                        <td className={`px-3 py-2 text-right font-medium ${entry.sign === "+" ? "text-green-700" : "text-red-700"}`}>
+                        <td className={`px-3 py-2 text-right font-medium whitespace-nowrap ${entry.sign === "+" ? "text-green-700" : "text-red-700"}`}>
                           {entry.sign}{entry.quantity.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-3 py-2 text-right whitespace-nowrap">
                           {entry.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="px-3 py-2 text-muted-foreground text-xs">
-                          {entry.type === "Purchase" && (
-                            <span>
-                              {entry.invoiceNo ? `Inv: ${entry.invoiceNo}` : ""}
-                              {entry.supplierName ? ` · ${entry.supplierName}` : ""}
-                            </span>
-                          )}
-                          {(entry.type === "Issue" || entry.type === "Return") && (
-                            <span>
-                              {entry.buyerName ?? ""}
-                              {entry.jobNo ? ` · Job: ${entry.jobNo}` : ""}
-                            </span>
-                          )}
+                        {/* Invoice / Supplier — Purchase only */}
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                          {entry.type === "Purchase"
+                            ? [entry.invoiceNo, entry.supplierName].filter(Boolean).join(" · ")
+                            : "—"}
                         </td>
-                        <td className="px-3 py-2 text-right font-semibold">
+                        {/* Buyer — Issue & Return */}
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                          {(entry.type === "Issue" || entry.type === "Return")
+                            ? (entry.buyerName ?? "—")
+                            : "—"}
+                        </td>
+                        {/* Job No — Issue & Return */}
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                          {(entry.type === "Issue" || entry.type === "Return")
+                            ? (entry.jobNo ?? "—")
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {entry.balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
