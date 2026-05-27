@@ -36,6 +36,88 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const returnId = parseInt(id);
+    const body = await request.json();
+    const { invoiceNo, buyerId, returnDate, total, vehicleNo, transport, freight, jobNo, remark, details } = body;
+
+    if (!buyerId || !returnDate || !details?.length) {
+      return NextResponse.json(
+        { error: "Buyer, return date, and at least one detail line are required" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Remove stock entries previously added by this return
+      await tx.stock.deleteMany({ where: { transactionId: returnId } });
+
+      // 2. Delete old details
+      await tx.returnDetail.deleteMany({ where: { returnId } });
+
+      // 3. Update the return header
+      await tx.return.update({
+        where: { id: returnId },
+        data: {
+          invoiceNo: invoiceNo || null,
+          buyerId: parseInt(buyerId),
+          returnDate: new Date(returnDate),
+          total: parseFloat(total) || 0,
+          vehicleNo: vehicleNo || null,
+          transport: transport || null,
+          freight: parseFloat(freight) || 0,
+          jobNo: jobNo || null,
+          remark: remark || null,
+        },
+      });
+
+      // 4. Re-create details and add stock back
+      for (const d of details) {
+        await tx.returnDetail.create({
+          data: {
+            returnId,
+            productId: parseInt(String(d.productId)),
+            returnQuantity: parseFloat(String(d.returnQuantity)),
+            issuePrice: parseFloat(String(d.issuePrice)) || 0,
+            returnPrice: parseFloat(String(d.returnPrice)) || 0,
+            freight: parseFloat(String(d.freight)) || 0,
+            issueDetailId: d.issueDetailId ? parseInt(String(d.issueDetailId)) : null,
+            issueId: d.issueId ? parseInt(String(d.issueId)) : null,
+          },
+        });
+
+        await tx.stock.create({
+          data: {
+            productId: parseInt(String(d.productId)),
+            quantity: parseFloat(String(d.returnQuantity)),
+            price: parseFloat(String(d.returnPrice)) || 0,
+            addedDate: new Date(returnDate),
+            transactionId: returnId,
+          },
+        });
+      }
+    });
+
+    const updated = await prisma.return.findUnique({
+      where: { id: returnId },
+      include: {
+        buyer: { select: { id: true, name: true } },
+        details: { include: { product: { select: { id: true, name: true } } } },
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Error updating return:", error);
+    return NextResponse.json({ error: "Failed to update return" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

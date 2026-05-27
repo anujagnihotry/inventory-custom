@@ -54,7 +54,23 @@ export async function PUT(
         });
       }
 
-      // 2. Delete existing details and stock records
+      // 2. Validate new quantities against restored stock (before deducting)
+      for (const detail of details) {
+        const available = await tx.stock.aggregate({
+          where: { productId: parseInt(String(detail.productId)), quantity: { gt: 0 } },
+          _sum: { quantity: true },
+        });
+        const availableQty = Number(available._sum.quantity ?? 0);
+        if (Number(detail.quantity) > availableQty) {
+          const product = await tx.productMaster.findUnique({
+            where: { id: parseInt(String(detail.productId)) },
+            select: { name: true },
+          });
+          throw new Error(`Insufficient stock for "${product?.name ?? "product"}". Available: ${availableQty}, Requested: ${detail.quantity}`);
+        }
+      }
+
+      // 3. Delete existing details and stock records
       await tx.issueStockRecord.deleteMany({ where: { issueId } });
       await tx.issueDetail.deleteMany({ where: { issueId } });
 

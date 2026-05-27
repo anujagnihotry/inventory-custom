@@ -44,6 +44,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ── Negative stock validation ────────────────────────────────────────────
+    for (const detail of details) {
+      const available = await prisma.stock.aggregate({
+        where: { productId: parseInt(String(detail.productId)), quantity: { gt: 0 } },
+        _sum: { quantity: true },
+      });
+      const availableQty = Number(available._sum.quantity ?? 0);
+      if (Number(detail.quantity) > availableQty) {
+        const product = await prisma.productMaster.findUnique({
+          where: { id: parseInt(String(detail.productId)) },
+          select: { name: true },
+        });
+        return NextResponse.json(
+          { error: `Insufficient stock for "${product?.name ?? "product"}". Available: ${availableQty}, Requested: ${detail.quantity}` },
+          { status: 400 }
+        );
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // Create the issue with details
       const issue = await tx.issue.create({

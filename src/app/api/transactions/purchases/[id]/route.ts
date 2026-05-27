@@ -139,16 +139,29 @@ export async function DELETE(
     const { id } = await params;
     const purchaseId = Number(id);
 
+    // Guard: check if any stock rows from this purchase have been issued
+    const purchaseStocks = await prisma.stock.findMany({
+      where: { purchaseId },
+      select: { id: true },
+    });
+    const stockIds = purchaseStocks.map((s) => s.id);
+    if (stockIds.length > 0) {
+      const issuedCount = await prisma.issueStockRecord.count({
+        where: { stockId: { in: stockIds } },
+      });
+      if (issuedCount > 0) {
+        return NextResponse.json(
+          { error: "Cannot delete this purchase — some items have already been issued. Please delete or edit the related issues first." },
+          { status: 400 }
+        );
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       // Delete related stock entries
-      await tx.stock.deleteMany({
-        where: { purchaseId },
-      });
-
+      await tx.stock.deleteMany({ where: { purchaseId } });
       // Delete purchase (details cascade via onDelete: Cascade)
-      await tx.purchase.delete({
-        where: { id: purchaseId },
-      });
+      await tx.purchase.delete({ where: { id: purchaseId } });
     });
 
     return NextResponse.json({ success: true });
