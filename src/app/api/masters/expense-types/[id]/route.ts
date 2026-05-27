@@ -65,10 +65,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.expenseType.delete({
-      where: { id: parseInt(id) },
-    });
+    const expenseTypeId = parseInt(id);
 
+    const expenseCount = await prisma.expenseManager.count({ where: { expenseTypeId } });
+
+    if (expenseCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete — this expense type is used in ${expenseCount} expense record${expenseCount === 1 ? "" : "s"}. Remove those records first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.expenseType.delete({ where: { id: expenseTypeId } });
     return NextResponse.json({ message: "Expense type deleted successfully" });
   } catch (error) {
     console.error("Error deleting expense type:", error);

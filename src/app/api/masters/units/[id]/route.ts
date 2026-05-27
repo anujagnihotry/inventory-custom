@@ -65,10 +65,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.unitMaster.delete({
-      where: { id: parseInt(id) },
-    });
+    const unitId = parseInt(id);
 
+    const productCount = await prisma.productMaster.count({ where: { unitId } });
+
+    if (productCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete — this unit is used in ${productCount} product${productCount === 1 ? "" : "s"}. Remove those records first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.unitMaster.delete({ where: { id: unitId } });
     return NextResponse.json({ message: "Unit deleted successfully" });
   } catch (error) {
     console.error("Error deleting unit:", error);

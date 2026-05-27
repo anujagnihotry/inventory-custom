@@ -73,10 +73,25 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.consignee.delete({
-      where: { id: parseInt(id) },
-    });
+    const consigneeId = parseInt(id);
 
+    const [issueCount, transportCount] = await Promise.all([
+      prisma.issue.count({ where: { consigneeId } }),
+      prisma.transport.count({ where: { consigneeId } }),
+    ]);
+
+    const usages: string[] = [];
+    if (issueCount > 0) usages.push(`${issueCount} issue${issueCount === 1 ? "" : "s"}`);
+    if (transportCount > 0) usages.push(`${transportCount} transport record${transportCount === 1 ? "" : "s"}`);
+
+    if (usages.length > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete — this consignee is used in ${usages.join(" and ")}. Remove those records first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.consignee.delete({ where: { id: consigneeId } });
     return NextResponse.json({ message: "Consignee deleted successfully" });
   } catch (error) {
     console.error("Error deleting consignee:", error);

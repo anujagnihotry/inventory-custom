@@ -65,10 +65,25 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.category.delete({
-      where: { id: parseInt(id) },
-    });
+    const categoryId = parseInt(id);
 
+    const [subCategoryCount, productCount] = await Promise.all([
+      prisma.subCategory.count({ where: { categoryId } }),
+      prisma.productMaster.count({ where: { categoryId } }),
+    ]);
+
+    const usages: string[] = [];
+    if (subCategoryCount > 0) usages.push(`${subCategoryCount} sub-categor${subCategoryCount === 1 ? "y" : "ies"}`);
+    if (productCount > 0) usages.push(`${productCount} product${productCount === 1 ? "" : "s"}`);
+
+    if (usages.length > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete — this category is used in ${usages.join(" and ")}. Remove those records first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.category.delete({ where: { id: categoryId } });
     return NextResponse.json({ message: "Category deleted successfully" });
   } catch (error) {
     console.error("Error deleting category:", error);

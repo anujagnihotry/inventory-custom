@@ -73,10 +73,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.supplier.delete({
-      where: { id: parseInt(id) },
-    });
+    const supplierId = parseInt(id);
 
+    const purchaseCount = await prisma.purchase.count({ where: { supplierId } });
+
+    if (purchaseCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete — this supplier is used in ${purchaseCount} purchase${purchaseCount === 1 ? "" : "s"}. Remove those records first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.supplier.delete({ where: { id: supplierId } });
     return NextResponse.json({ message: "Supplier deleted successfully" });
   } catch (error) {
     console.error("Error deleting supplier:", error);

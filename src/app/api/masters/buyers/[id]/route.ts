@@ -73,10 +73,29 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.buyer.delete({
-      where: { id: parseInt(id) },
-    });
+    const buyerId = parseInt(id);
 
+    const [issueCount, returnCount, expenseCount, transportCount] = await Promise.all([
+      prisma.issue.count({ where: { buyerId } }),
+      prisma.return.count({ where: { buyerId } }),
+      prisma.expenseManager.count({ where: { buyerId } }),
+      prisma.transport.count({ where: { buyerId } }),
+    ]);
+
+    const usages: string[] = [];
+    if (issueCount > 0) usages.push(`${issueCount} issue${issueCount === 1 ? "" : "s"}`);
+    if (returnCount > 0) usages.push(`${returnCount} return${returnCount === 1 ? "" : "s"}`);
+    if (expenseCount > 0) usages.push(`${expenseCount} expense${expenseCount === 1 ? "" : "s"}`);
+    if (transportCount > 0) usages.push(`${transportCount} transport record${transportCount === 1 ? "" : "s"}`);
+
+    if (usages.length > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete — this buyer is used in ${usages.join(", ")}. Remove those records first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.buyer.delete({ where: { id: buyerId } });
     return NextResponse.json({ message: "Buyer deleted successfully" });
   } catch (error) {
     console.error("Error deleting buyer:", error);

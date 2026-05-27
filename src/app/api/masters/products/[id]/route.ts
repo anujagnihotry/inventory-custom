@@ -94,10 +94,29 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.productMaster.delete({
-      where: { id: parseInt(id) },
-    });
+    const productId = parseInt(id);
 
+    const [stockCount, purchaseCount, issueCount, returnCount] = await Promise.all([
+      prisma.stock.count({ where: { productId } }),
+      prisma.purchaseDetail.count({ where: { productId } }),
+      prisma.issueDetail.count({ where: { productId } }),
+      prisma.returnDetail.count({ where: { productId } }),
+    ]);
+
+    const usages: string[] = [];
+    if (stockCount > 0) usages.push(`${stockCount} stock entr${stockCount === 1 ? "y" : "ies"}`);
+    if (purchaseCount > 0) usages.push(`${purchaseCount} purchase line${purchaseCount === 1 ? "" : "s"}`);
+    if (issueCount > 0) usages.push(`${issueCount} issue line${issueCount === 1 ? "" : "s"}`);
+    if (returnCount > 0) usages.push(`${returnCount} return line${returnCount === 1 ? "" : "s"}`);
+
+    if (usages.length > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete — this product is used in ${usages.join(", ")}. Remove those records first.` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.productMaster.delete({ where: { id: productId } });
     return NextResponse.json({ message: "Product deleted successfully" });
   } catch (error) {
     console.error("Error deleting product:", error);
