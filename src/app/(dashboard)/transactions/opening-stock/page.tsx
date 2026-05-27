@@ -144,9 +144,9 @@ export default function OpeningStockPage() {
   return (
     <div className="container mx-auto py-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Opening Stock</h1>
+        <h1 className="text-2xl font-bold">Stock</h1>
         <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Opening Stock
+          <Plus className="mr-2 h-4 w-4" /> Add Stock
         </Button>
       </div>
 
@@ -161,7 +161,7 @@ export default function OpeningStockPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Opening Stock</DialogTitle>
+            <DialogTitle>Add Stock</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
