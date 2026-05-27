@@ -164,9 +164,10 @@ model Purchase {
   total      Decimal  @db.Decimal(18, 4)
   gst        Decimal  @default(0) @db.Decimal(18, 4)
   netAmount  Decimal  @default(0) @db.Decimal(18, 4)
-  vehicleNo  String?  @db.VarChar(20)
-  transport  String?  @db.VarChar(300)
-  createdAt  DateTime @default(now())
+  vehicleNo      String?   @db.VarChar(20)
+  transport      String?   @db.VarChar(300)
+  receivingDate  DateTime? @db.Date
+  createdAt      DateTime  @default(now())
 
   supplier Supplier         @relation(fields: [supplierId], references: [id])
   details  PurchaseDetail[]

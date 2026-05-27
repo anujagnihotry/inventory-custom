@@ -41,6 +41,7 @@ interface PurchaseRow {
   netAmount: number;
   vehicleNo: string | null;
   transport: string | null;
+  receivingDate: string | null;
   supplier: { id: number; name: string };
 }
 
@@ -93,6 +94,7 @@ export default function PurchasesPage() {
   const [date, setDate] = useState("");
   const [vehicleNo, setVehicleNo] = useState("");
   const [transport, setTransport] = useState("");
+  const [receivingDate, setReceivingDate] = useState("");
   const [gst, setGst] = useState<number>(0);
   const [items, setItems] = useState<PurchaseItem[]>([emptyItem()]);
 
@@ -171,6 +173,7 @@ export default function PurchasesPage() {
     setDate("");
     setVehicleNo("");
     setTransport("");
+    setReceivingDate("");
     setGst(0);
     setItems([emptyItem()]);
   };
@@ -192,6 +195,7 @@ export default function PurchasesPage() {
       setDate(data.date ? data.date.substring(0, 10) : "");
       setVehicleNo(data.vehicleNo || "");
       setTransport(data.transport || "");
+      setReceivingDate(data.receivingDate ? data.receivingDate.substring(0, 10) : "");
       setGst(Number(data.gst) || 0);
       setItems(
         data.details.map((d: Record<string, unknown>) => ({
@@ -254,6 +258,7 @@ export default function PurchasesPage() {
         netAmount,
         vehicleNo,
         transport,
+        receivingDate: receivingDate || null,
         details: validItems,
       };
 
@@ -378,11 +383,12 @@ export default function PurchasesPage() {
 
         {/* Header */}
         <div className="rounded-md border p-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
             {[
               ["Invoice No", p.invoiceNo],
               ["Supplier", p.supplier?.name],
               ["Date", p.date ? new Date(p.date).toLocaleDateString("en-IN") : "-"],
+              ["Receiving Date", p.receivingDate ? new Date(p.receivingDate).toLocaleDateString("en-IN") : "-"],
               ["Vehicle No", p.vehicleNo || "-"],
               ["Transport", p.transport || "-"],
             ].map(([label, value]) => (
@@ -573,6 +579,16 @@ export default function PurchasesPage() {
               value={transport}
               onChange={(e) => setTransport(e.target.value)}
               placeholder="Transport name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="receivingDate">Receiving Date</Label>
+            <Input
+              id="receivingDate"
+              type="date"
+              value={receivingDate}
+              onChange={(e) => setReceivingDate(e.target.value)}
             />
           </div>
         </div>

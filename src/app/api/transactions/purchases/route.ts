@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       netAmount,
       vehicleNo,
       transport,
+      receivingDate,
       details,
     } = body;
 
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
           netAmount: netAmount || 0,
           vehicleNo: vehicleNo || null,
           transport: transport || null,
+          receivingDate: receivingDate ? new Date(receivingDate) : null,
         },
       });
 

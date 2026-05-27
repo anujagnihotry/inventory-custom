@@ -53,6 +53,7 @@ export async function PUT(
       netAmount,
       vehicleNo,
       transport,
+      receivingDate,
       details,
     } = body;
 
@@ -86,6 +87,7 @@ export async function PUT(
           netAmount: netAmount || 0,
           vehicleNo: vehicleNo || null,
           transport: transport || null,
+          receivingDate: receivingDate ? new Date(receivingDate) : null,
         },
       });
 
