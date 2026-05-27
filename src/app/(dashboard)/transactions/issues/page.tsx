@@ -7,22 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Save, Pencil, Eye } from "lucide-react";
 
-interface Buyer {
-  id: number;
-  name: string;
-}
-
-interface Consignee {
-  id: number;
-  name: string;
-}
-
-interface Product {
-  id: number;
-  name: string;
-}
+interface Buyer { id: number; name: string; }
+interface Consignee { id: number; name: string; }
+interface Product { id: number; name: string; }
 
 interface IssueDetailLine {
   productId: number | "";
@@ -33,6 +22,18 @@ interface IssueDetailLine {
   total: number;
   issuePrice: number | "";
   remark: string;
+}
+
+interface IssueDetailRecord {
+  id: number;
+  productId: number;
+  quantity: string;
+  price: string;
+  freight: string;
+  total: string;
+  issuePrice: string;
+  remark: string | null;
+  product: { id: number; name: string };
 }
 
 interface Issue {
@@ -49,32 +50,27 @@ interface Issue {
   createdAt: string;
   buyer: { id: number; name: string };
   consignee: { id: number; name: string };
+  details?: IssueDetailRecord[];
 }
 
 const emptyDetail: IssueDetailLine = {
-  productId: "",
-  availableQty: 0,
-  quantity: "",
-  price: "",
-  freight: "",
-  total: 0,
-  issuePrice: "",
-  remark: "",
+  productId: "", availableQty: 0, quantity: "", price: "",
+  freight: "", total: 0, issuePrice: "", remark: "",
 };
 
 export default function IssuesPage() {
-  const [mode, setMode] = useState<"list" | "form">("list");
+  const [mode, setMode] = useState<"list" | "new" | "edit" | "view">("list");
   const [data, setData] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [viewingIssue, setViewingIssue] = useState<Issue | null>(null);
 
-  // Dropdown data
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [consignees, setConsignees] = useState<Consignee[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Form state
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [consigneeId, setConsigneeId] = useState<number | "">("");
   const [buyerId, setBuyerId] = useState<number | "">("");
@@ -89,62 +85,46 @@ export default function IssuesPage() {
     try {
       setLoading(true);
       const res = await fetch("/api/transactions/issues");
-      if (!res.ok) throw new Error("Failed to fetch issues");
-      const json = await res.json();
-      setData(json);
-    } catch {
-      toast.error("Failed to load issues");
-    } finally {
-      setLoading(false);
-    }
+      if (!res.ok) throw new Error();
+      setData(await res.json());
+    } catch { toast.error("Failed to load issues"); }
+    finally { setLoading(false); }
   }, []);
 
   const fetchDropdowns = useCallback(async () => {
     try {
-      const [buyersRes, consigneesRes, productsRes] = await Promise.all([
+      const [br, cr, pr] = await Promise.all([
         fetch("/api/masters/buyers"),
         fetch("/api/masters/consignees"),
         fetch("/api/masters/products"),
       ]);
-      if (buyersRes.ok) setBuyers(await buyersRes.json());
-      if (consigneesRes.ok) setConsignees(await consigneesRes.json());
-      if (productsRes.ok) setProducts(await productsRes.json());
-    } catch {
-      toast.error("Failed to load dropdown data");
-    }
+      if (br.ok) setBuyers(await br.json());
+      if (cr.ok) setConsignees(await cr.json());
+      if (pr.ok) setProducts(await pr.json());
+    } catch { toast.error("Failed to load dropdown data"); }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-    fetchDropdowns();
-  }, [fetchData, fetchDropdowns]);
+  useEffect(() => { fetchData(); fetchDropdowns(); }, [fetchData, fetchDropdowns]);
 
   const resetForm = () => {
+    setEditingId(null);
     setDate(new Date().toISOString().split("T")[0]);
-    setConsigneeId("");
-    setBuyerId("");
-    setJobNo("");
-    setVehicleNo("");
-    setTransport("");
-    setFreight("");
-    setRemark("");
+    setConsigneeId(""); setBuyerId(""); setJobNo("");
+    setVehicleNo(""); setTransport(""); setFreight(""); setRemark("");
     setDetails([{ ...emptyDetail }]);
   };
 
-  const fetchStockForProduct = async (productId: number): Promise<{ totalQty: number; avgPrice: number }> => {
+  const fetchStockForProduct = async (productId: number) => {
     try {
       const res = await fetch(`/api/transactions/stock/product/${productId}`);
       if (!res.ok) return { totalQty: 0, avgPrice: 0 };
       return await res.json();
-    } catch {
-      return { totalQty: 0, avgPrice: 0 };
-    }
+    } catch { return { totalQty: 0, avgPrice: 0 }; }
   };
 
   const handleProductChange = async (index: number, productId: number) => {
     const newDetails = [...details];
     newDetails[index].productId = productId;
-
     if (productId) {
       const stock = await fetchStockForProduct(productId);
       newDetails[index].availableQty = stock.totalQty;
@@ -155,16 +135,11 @@ export default function IssuesPage() {
       newDetails[index].price = "";
       newDetails[index].issuePrice = "";
     }
-
     recalcLineTotal(newDetails, index);
     setDetails(newDetails);
   };
 
-  const handleDetailChange = (
-    index: number,
-    field: keyof IssueDetailLine,
-    value: string | number
-  ) => {
+  const handleDetailChange = (index: number, field: keyof IssueDetailLine, value: string | number) => {
     const newDetails = [...details];
     (newDetails[index] as unknown as Record<string, unknown>)[field] = value;
     recalcLineTotal(newDetails, index);
@@ -173,60 +148,87 @@ export default function IssuesPage() {
 
   const recalcLineTotal = (lines: IssueDetailLine[], index: number) => {
     const line = lines[index];
-    const qty = Number(line.quantity) || 0;
-    const price = Number(line.price) || 0;
-    const lineFreight = Number(line.freight) || 0;
-    lines[index].total = parseFloat((qty * price + lineFreight).toFixed(2));
+    lines[index].total = parseFloat(
+      (Number(line.quantity) * Number(line.price) + Number(line.freight)).toFixed(2)
+    );
   };
 
-  const addDetailLine = () => {
-    setDetails([...details, { ...emptyDetail }]);
+  const calculateGrandTotal = () =>
+    details.reduce((sum, d) => sum + (d.total || 0), 0).toFixed(2);
+
+  const handleView = async (id: number) => {
+    try {
+      const res = await fetch(`/api/transactions/issues/${id}`);
+      if (!res.ok) throw new Error();
+      const issue = await res.json();
+      setViewingIssue(issue);
+      setMode("view");
+    } catch { toast.error("Failed to load issue"); }
   };
 
-  const removeDetailLine = (index: number) => {
-    if (details.length <= 1) return;
-    setDetails(details.filter((_, i) => i !== index));
-  };
+  const handleEdit = async (id: number) => {
+    try {
+      const res = await fetch(`/api/transactions/issues/${id}`);
+      if (!res.ok) throw new Error();
+      const issue: Issue = await res.json();
+      setEditingId(id);
+      setDate(issue.date.split("T")[0]);
+      setConsigneeId(issue.consigneeId);
+      setBuyerId(issue.buyerId);
+      setJobNo(issue.jobNo || "");
+      setVehicleNo(issue.vehicleNo || "");
+      setTransport(issue.transport || "");
+      setFreight(issue.freight ? parseFloat(issue.freight) : "");
+      setRemark(issue.remark || "");
 
-  const calculateGrandTotal = () => {
-    return details.reduce((sum, d) => sum + (d.total || 0), 0).toFixed(2);
+      if (issue.details && issue.details.length > 0) {
+        const lines: IssueDetailLine[] = await Promise.all(
+          issue.details.map(async (d) => {
+            const stock = await fetchStockForProduct(d.productId);
+            return {
+              productId: d.productId,
+              availableQty: stock.totalQty,
+              quantity: parseFloat(d.quantity),
+              price: parseFloat(d.price),
+              freight: parseFloat(d.freight),
+              total: parseFloat(d.total),
+              issuePrice: parseFloat(d.issuePrice),
+              remark: d.remark || "",
+            };
+          })
+        );
+        setDetails(lines);
+      } else {
+        setDetails([{ ...emptyDetail }]);
+      }
+      setMode("edit");
+    } catch { toast.error("Failed to load issue for editing"); }
   };
 
   const handleSave = async () => {
     if (!consigneeId || !buyerId) {
-      toast.error("Please select consignee and buyer");
-      return;
+      toast.error("Please select consignee and buyer"); return;
     }
-
     const validDetails = details.filter((d) => d.productId && d.quantity);
     if (validDetails.length === 0) {
-      toast.error("Please add at least one line item");
-      return;
+      toast.error("Please add at least one line item"); return;
     }
 
     try {
       setSaving(true);
-      const res = await fetch("/api/transactions/issues", {
-        method: "POST",
+      const url = editingId ? `/api/transactions/issues/${editingId}` : "/api/transactions/issues";
+      const method = editingId ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date,
-          consigneeId,
-          buyerId,
-          total: calculateGrandTotal(),
-          vehicleNo,
-          transport,
-          freight: freight || 0,
-          remark,
-          jobNo,
+          date, consigneeId, buyerId, total: calculateGrandTotal(),
+          vehicleNo, transport, freight: freight || 0, remark, jobNo,
           details: validDetails.map((d) => ({
-            productId: d.productId,
-            quantity: d.quantity,
-            price: d.price || 0,
-            freight: d.freight || 0,
-            total: d.total,
-            issuePrice: d.issuePrice || 0,
-            remark: d.remark,
+            productId: d.productId, quantity: d.quantity,
+            price: d.price || 0, freight: d.freight || 0,
+            total: d.total, issuePrice: d.issuePrice || 0, remark: d.remark,
           })),
         }),
       });
@@ -236,80 +238,150 @@ export default function IssuesPage() {
         throw new Error(err.error || "Failed to save issue");
       }
 
-      toast.success("Issue created successfully");
+      toast.success(editingId ? "Issue updated successfully" : "Issue created successfully");
       resetForm();
       setMode("list");
       fetchData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save issue");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this issue?")) return;
     try {
       setDeleting(id);
-      const res = await fetch(`/api/transactions/issues/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete issue");
+      const res = await fetch(`/api/transactions/issues/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
       toast.success("Issue deleted");
       fetchData();
-    } catch {
-      toast.error("Failed to delete issue");
-    } finally {
-      setDeleting(null);
-    }
+    } catch { toast.error("Failed to delete issue"); }
+    finally { setDeleting(null); }
   };
 
   const columns: ColumnDef<Issue>[] = [
+    { accessorKey: "id", header: "ID" },
     {
-      accessorKey: "id",
-      header: "ID",
-    },
-    {
-      accessorKey: "date",
-      header: "Date",
+      accessorKey: "date", header: "Date",
       cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
     },
     {
-      accessorKey: "buyer.name",
-      header: "Buyer",
+      accessorKey: "buyer.name", header: "Buyer",
       cell: ({ row }) => row.original.buyer?.name || "-",
     },
     {
-      accessorKey: "consignee.name",
-      header: "Consignee",
+      accessorKey: "consignee.name", header: "Consignee",
       cell: ({ row }) => row.original.consignee?.name || "-",
     },
+    { accessorKey: "jobNo", header: "Job No" },
     {
-      accessorKey: "jobNo",
-      header: "Job No",
-    },
-    {
-      accessorKey: "total",
-      header: "Total",
+      accessorKey: "total", header: "Total",
       cell: ({ row }) => parseFloat(row.original.total).toFixed(2),
     },
     {
-      id: "actions",
-      header: "Actions",
+      id: "actions", header: "Actions",
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleDelete(row.original.id)}
-          disabled={deleting === row.original.id}
-        >
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => handleView(row.original.id)} title="View">
+            <Eye className="h-4 w-4 text-blue-500" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original.id)} title="Edit">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost" size="icon"
+            onClick={() => handleDelete(row.original.id)}
+            disabled={deleting === row.original.id}
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       ),
     },
   ];
 
-  if (mode === "form") {
+  // ── VIEW MODE ──────────────────────────────────────────────
+  if (mode === "view" && viewingIssue) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => { setViewingIssue(null); setMode("list"); }}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl font-bold">Issue #{viewingIssue.id}</h1>
+          </div>
+          <Button onClick={() => handleEdit(viewingIssue.id)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit
+          </Button>
+        </div>
+
+        <div className="border rounded-lg p-4 space-y-4">
+          <h2 className="text-lg font-semibold">Issue Details</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            {[
+              ["Date", new Date(viewingIssue.date).toLocaleDateString()],
+              ["Buyer", viewingIssue.buyer?.name],
+              ["Consignee", viewingIssue.consignee?.name],
+              ["Job No", viewingIssue.jobNo || "-"],
+              ["Vehicle No", viewingIssue.vehicleNo || "-"],
+              ["Transport", viewingIssue.transport || "-"],
+              ["Freight", viewingIssue.freight || "0"],
+              ["Remark", viewingIssue.remark || "-"],
+            ].map(([label, value]) => (
+              <div key={label} className="space-y-1">
+                <p className="text-muted-foreground font-medium">{label}</p>
+                <p className="font-semibold">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="border rounded-lg p-4 space-y-4">
+          <h2 className="text-lg font-semibold">Line Items</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-2">#</th>
+                  <th className="text-left p-2">Product</th>
+                  <th className="text-right p-2">Qty</th>
+                  <th className="text-right p-2">Price</th>
+                  <th className="text-right p-2">Freight</th>
+                  <th className="text-right p-2">Total</th>
+                  <th className="text-right p-2">Issue Price</th>
+                  <th className="text-left p-2">Remark</th>
+                </tr>
+              </thead>
+              <tbody>
+                {viewingIssue.details?.map((d, i) => (
+                  <tr key={d.id} className="border-b">
+                    <td className="p-2">{i + 1}</td>
+                    <td className="p-2">{d.product?.name}</td>
+                    <td className="p-2 text-right">{parseFloat(d.quantity).toFixed(2)}</td>
+                    <td className="p-2 text-right">{parseFloat(d.price).toFixed(2)}</td>
+                    <td className="p-2 text-right">{parseFloat(d.freight).toFixed(2)}</td>
+                    <td className="p-2 text-right">{parseFloat(d.total).toFixed(2)}</td>
+                    <td className="p-2 text-right">{parseFloat(d.issuePrice).toFixed(2)}</td>
+                    <td className="p-2">{d.remark || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end">
+            <p className="text-lg font-bold">
+              Grand Total: {parseFloat(viewingIssue.total).toFixed(2)}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FORM MODE (new / edit) ─────────────────────────────────
+  if (mode === "new" || mode === "edit") {
     return (
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -317,7 +389,9 @@ export default function IssuesPage() {
             <Button variant="outline" size="icon" onClick={() => { resetForm(); setMode("list"); }}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-2xl font-bold">New Issue</h1>
+            <h1 className="text-2xl font-bold">
+              {mode === "edit" ? `Edit Issue #${editingId}` : "New Issue"}
+            </h1>
           </div>
           <Button onClick={handleSave} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
@@ -325,17 +399,12 @@ export default function IssuesPage() {
           </Button>
         </div>
 
-        {/* Header Fields */}
         <div className="border rounded-lg p-4 space-y-4">
           <h2 className="text-lg font-semibold">Issue Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Date *</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Consignee *</Label>
@@ -345,11 +414,7 @@ export default function IssuesPage() {
                 onChange={(e) => setConsigneeId(e.target.value ? parseInt(e.target.value) : "")}
               >
                 <option value="">Select Consignee</option>
-                {consignees.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                {consignees.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div className="space-y-2">
@@ -360,11 +425,7 @@ export default function IssuesPage() {
                 onChange={(e) => setBuyerId(e.target.value ? parseInt(e.target.value) : "")}
               >
                 <option value="">Select Buyer</option>
-                {buyers.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
+                {buyers.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
             <div className="space-y-2">
@@ -381,11 +442,8 @@ export default function IssuesPage() {
             </div>
             <div className="space-y-2">
               <Label>Freight</Label>
-              <Input
-                type="number"
-                value={freight}
-                onChange={(e) => setFreight(e.target.value ? parseFloat(e.target.value) : "")}
-              />
+              <Input type="number" value={freight}
+                onChange={(e) => setFreight(e.target.value ? parseFloat(e.target.value) : "")} />
             </div>
             <div className="space-y-2">
               <Label>Remark</Label>
@@ -394,11 +452,10 @@ export default function IssuesPage() {
           </div>
         </div>
 
-        {/* Line Items */}
         <div className="border rounded-lg p-4 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Line Items</h2>
-            <Button variant="outline" size="sm" onClick={addDetailLine}>
+            <Button variant="outline" size="sm" onClick={() => setDetails([...details, { ...emptyDetail }])}>
               <Plus className="mr-2 h-4 w-4" /> Add Line
             </Button>
           </div>
@@ -415,7 +472,7 @@ export default function IssuesPage() {
                   <th className="text-left p-2 w-[100px]">Total</th>
                   <th className="text-left p-2 w-[100px]">Issue Price</th>
                   <th className="text-left p-2 min-w-[120px]">Remark</th>
-                  <th className="text-left p-2 w-[50px]"></th>
+                  <th className="p-2 w-[50px]"></th>
                 </tr>
               </thead>
               <tbody>
@@ -425,110 +482,42 @@ export default function IssuesPage() {
                       <select
                         className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
                         value={line.productId}
-                        onChange={(e) =>
-                          handleProductChange(
-                            index,
-                            e.target.value ? parseInt(e.target.value) : 0
-                          )
-                        }
+                        onChange={(e) => handleProductChange(index, e.target.value ? parseInt(e.target.value) : 0)}
                       >
                         <option value="">Select Product</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
+                        {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                     </td>
                     <td className="p-2">
-                      <Input
-                        type="number"
-                        value={line.availableQty}
-                        readOnly
-                        className="bg-muted h-9"
-                      />
+                      <Input type="number" value={line.availableQty} readOnly className="bg-muted h-9" />
                     </td>
                     <td className="p-2">
-                      <Input
-                        type="number"
-                        value={line.quantity}
-                        onChange={(e) =>
-                          handleDetailChange(
-                            index,
-                            "quantity",
-                            e.target.value ? parseFloat(e.target.value) : ""
-                          )
-                        }
-                        className="h-9"
-                      />
+                      <Input type="number" value={line.quantity} className="h-9"
+                        onChange={(e) => handleDetailChange(index, "quantity", e.target.value ? parseFloat(e.target.value) : "")} />
                     </td>
                     <td className="p-2">
-                      <Input
-                        type="number"
-                        value={line.price}
-                        onChange={(e) =>
-                          handleDetailChange(
-                            index,
-                            "price",
-                            e.target.value ? parseFloat(e.target.value) : ""
-                          )
-                        }
-                        className="h-9"
-                      />
+                      <Input type="number" value={line.price} className="h-9"
+                        onChange={(e) => handleDetailChange(index, "price", e.target.value ? parseFloat(e.target.value) : "")} />
                     </td>
                     <td className="p-2">
-                      <Input
-                        type="number"
-                        value={line.freight}
-                        onChange={(e) =>
-                          handleDetailChange(
-                            index,
-                            "freight",
-                            e.target.value ? parseFloat(e.target.value) : ""
-                          )
-                        }
-                        className="h-9"
-                      />
+                      <Input type="number" value={line.freight} className="h-9"
+                        onChange={(e) => handleDetailChange(index, "freight", e.target.value ? parseFloat(e.target.value) : "")} />
                     </td>
                     <td className="p-2">
-                      <Input
-                        type="number"
-                        value={line.total}
-                        readOnly
-                        className="bg-muted h-9"
-                      />
+                      <Input type="number" value={line.total} readOnly className="bg-muted h-9" />
                     </td>
                     <td className="p-2">
-                      <Input
-                        type="number"
-                        value={line.issuePrice}
-                        onChange={(e) =>
-                          handleDetailChange(
-                            index,
-                            "issuePrice",
-                            e.target.value ? parseFloat(e.target.value) : ""
-                          )
-                        }
-                        className="h-9"
-                      />
+                      <Input type="number" value={line.issuePrice} className="h-9"
+                        onChange={(e) => handleDetailChange(index, "issuePrice", e.target.value ? parseFloat(e.target.value) : "")} />
                     </td>
                     <td className="p-2">
-                      <Input
-                        value={line.remark}
-                        onChange={(e) =>
-                          handleDetailChange(index, "remark", e.target.value)
-                        }
-                        className="h-9"
-                      />
+                      <Input value={line.remark} className="h-9"
+                        onChange={(e) => handleDetailChange(index, "remark", e.target.value)} />
                     </td>
                     <td className="p-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeDetailLine(index)}
-                        disabled={details.length <= 1}
-                        className="h-9 w-9"
-                      >
+                      <Button variant="ghost" size="icon" className="h-9 w-9"
+                        onClick={() => setDetails(details.filter((_, i) => i !== index))}
+                        disabled={details.length <= 1}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </td>
@@ -539,20 +528,19 @@ export default function IssuesPage() {
           </div>
 
           <div className="flex justify-end">
-            <div className="text-lg font-semibold">
-              Grand Total: {calculateGrandTotal()}
-            </div>
+            <div className="text-lg font-semibold">Grand Total: {calculateGrandTotal()}</div>
           </div>
         </div>
       </div>
     );
   }
 
+  // ── LIST MODE ──────────────────────────────────────────────
   return (
     <div className="container mx-auto py-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Issues</h1>
-        <Button onClick={() => setMode("form")}>
+        <Button onClick={() => { resetForm(); setMode("new"); }}>
           <Plus className="mr-2 h-4 w-4" /> New Issue
         </Button>
       </div>

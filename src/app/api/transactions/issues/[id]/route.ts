@@ -34,6 +34,102 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const issueId = parseInt(id);
+    const body = await request.json();
+    const { date, consigneeId, buyerId, total, vehicleNo, transport, freight, remark, jobNo, details } = body;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Restore stock from existing issue stock records
+      const stockRecords = await tx.issueStockRecord.findMany({ where: { issueId } });
+      for (const record of stockRecords) {
+        await tx.stock.update({
+          where: { id: record.stockId },
+          data: { quantity: { increment: Number(record.quantity) } },
+        });
+      }
+
+      // 2. Delete existing details and stock records
+      await tx.issueStockRecord.deleteMany({ where: { issueId } });
+      await tx.issueDetail.deleteMany({ where: { issueId } });
+
+      // 3. Update the issue header
+      await tx.issue.update({
+        where: { id: issueId },
+        data: {
+          date: new Date(date),
+          consigneeId: parseInt(consigneeId),
+          buyerId: parseInt(buyerId),
+          total: total.toString(),
+          vehicleNo: vehicleNo || null,
+          transport: transport || null,
+          freight: freight?.toString() || "0",
+          remark: remark || null,
+          jobNo: jobNo || null,
+        },
+      });
+
+      // 4. Re-create details with new stock deductions
+      for (const detail of details) {
+        const productId = parseInt(detail.productId);
+        const qty = parseFloat(detail.quantity);
+
+        // Deduct from stock FIFO
+        const stocks = await tx.stock.findMany({
+          where: { productId, quantity: { gt: 0 } },
+          orderBy: { id: "asc" },
+        });
+
+        let remaining = qty;
+        for (const stock of stocks) {
+          if (remaining <= 0) break;
+          const deduct = Math.min(remaining, Number(stock.quantity));
+          await tx.stock.update({
+            where: { id: stock.id },
+            data: { quantity: { decrement: deduct } },
+          });
+          await tx.issueStockRecord.create({
+            data: { issueId, stockId: stock.id, quantity: deduct.toString() },
+          });
+          remaining -= deduct;
+        }
+
+        await tx.issueDetail.create({
+          data: {
+            issueId,
+            productId,
+            quantity: qty.toString(),
+            price: detail.price?.toString() || "0",
+            freight: detail.freight?.toString() || "0",
+            total: detail.total?.toString() || "0",
+            issuePrice: detail.issuePrice?.toString() || "0",
+            remark: detail.remark || null,
+          },
+        });
+      }
+    });
+
+    const updated = await prisma.issue.findUnique({
+      where: { id: issueId },
+      include: {
+        buyer: { select: { id: true, name: true } },
+        consignee: { select: { id: true, name: true } },
+        details: { include: { product: { select: { id: true, name: true } } } },
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Error updating issue:", error);
+    return NextResponse.json({ error: "Failed to update issue" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
