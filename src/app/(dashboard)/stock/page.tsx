@@ -187,7 +187,7 @@ export default function StockPage() {
           }
         }}
       >
-        <DialogContent className="w-[95vw] max-w-6xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="!w-[90vw] !max-w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Stock History — {historyProduct?.productName}
