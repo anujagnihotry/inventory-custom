@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Pencil, Trash2, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Save, Eye } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,8 @@ export default function ExpensesPage() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewingRow, setViewingRow] = useState<ExpenseRow | null>(null);
 
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -225,10 +227,19 @@ export default function ExpensesPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
+            title="View"
+            onClick={() => { setViewingRow(row.original); setViewDialogOpen(true); }}
+          >
+            <Eye className="h-4 w-4 text-blue-500" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Edit"
             onClick={() => openEditDialog(row.original)}
           >
             <Pencil className="h-4 w-4" />
@@ -236,6 +247,7 @@ export default function ExpensesPage() {
           <Button
             variant="ghost"
             size="icon"
+            title="Delete"
             onClick={() => handleDelete(row.original.id)}
             disabled={deleting === row.original.id}
           >
@@ -268,6 +280,37 @@ export default function ExpensesPage() {
         <DataTable columns={columns} data={data} />
       )}
 
+      {/* View Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Expense Details</DialogTitle>
+          </DialogHeader>
+          {viewingRow && (
+            <div className="space-y-3 pt-2 text-sm">
+              {[
+                ["Date", new Date(viewingRow.expenseDate).toLocaleDateString("en-IN")],
+                ["Buyer", viewingRow.buyer?.name],
+                ["Expense Type", viewingRow.expenseType?.name],
+                ["Product", viewingRow.product?.name || "-"],
+                ["Job Card No", viewingRow.jobCardNo || "-"],
+                ["Amount", Number(viewingRow.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })],
+                ["Remark", viewingRow.remark || "-"],
+              ].map(([label, value]) => (
+                <div key={label} className="grid grid-cols-2 gap-2 border-b pb-2">
+                  <span className="text-muted-foreground font-medium">{label}</span>
+                  <span className="font-semibold">{value}</span>
+                </div>
+              ))}
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Close</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
