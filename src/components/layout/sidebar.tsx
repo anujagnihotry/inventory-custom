@@ -73,7 +73,7 @@ const navSections: NavSection[] = [
       { label: "Returns", href: "/transactions/returns", icon: RotateCcw },
       { label: "Return Repairs", href: "/transactions/return-repairs", icon: Wrench },
       { label: "Issue Transfers", href: "/transactions/issue-transfers", icon: ArrowLeftRight },
-      { label: "Stock", href: "/transactions/opening-stock", icon: FolderOpen },
+      { label: "Opening Stock", href: "/transactions/opening-stock", icon: FolderOpen },
       { label: "Losses", href: "/transactions/losses", icon: TrendingDown },
       { label: "Scraps", href: "/transactions/scraps", icon: Trash2 },
       { label: "Repairs", href: "/transactions/repairs", icon: Wrench },
