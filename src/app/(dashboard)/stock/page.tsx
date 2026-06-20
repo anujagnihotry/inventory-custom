@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
 import { Eye, TrendingUp, TrendingDown } from "lucide-react";
 import {
   Dialog,
@@ -150,24 +152,22 @@ export default function StockPage() {
           size="icon"
           title="View history"
           onClick={() => openHistory(row.original)}
+          className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600"
         >
-          <Eye className="h-4 w-4 text-blue-600" />
+          <Eye className="h-3.5 w-3.5" />
         </Button>
       ),
     },
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Stock Summary</h1>
-      </div>
+    <div className="max-w-6xl mx-auto">
+      <PageHeader
+        title="Stock Summary"
+        description="Current balance, average price, and total value per product."
+      />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      ) : (
+      {loading ? <SkeletonTable rows={6} cols={6} /> : (
         <DataTable
           columns={columns}
           data={data}

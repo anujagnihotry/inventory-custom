@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
 import {
   Dialog,
   DialogContent,
@@ -46,41 +48,32 @@ export default function UnitsPage() {
     try {
       setLoading(true);
       const res = await fetch("/api/masters/units");
-      if (!res.ok) throw new Error("Failed to fetch units");
-      const json = await res.json();
-      setData(json);
-    } catch (error) {
+      if (!res.ok) throw new Error();
+      setData(await res.json());
+    } catch {
       toast.error("Failed to load units");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const onSubmit = async (values: UnitFormData) => {
     try {
-      const url = editingItem
-        ? `/api/masters/units/${editingItem.id}`
-        : "/api/masters/units";
-      const method = editingItem ? "PUT" : "POST";
-
+      const url = editingItem ? `/api/masters/units/${editingItem.id}` : "/api/masters/units";
       const res = await fetch(url, {
-        method,
+        method: editingItem ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
-
-      if (!res.ok) throw new Error("Failed to save unit");
-
+      if (!res.ok) throw new Error();
       toast.success(editingItem ? "Unit updated" : "Unit created");
       setDialogOpen(false);
       setEditingItem(null);
       form.reset({ name: "" });
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error("Failed to save unit");
     }
   };
@@ -95,9 +88,7 @@ export default function UnitsPage() {
     if (!confirm("Are you sure you want to delete this unit?")) return;
     try {
       setDeleting(id);
-      const res = await fetch(`/api/masters/units/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/masters/units/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to delete unit");
       toast.success("Unit deleted");
@@ -109,38 +100,18 @@ export default function UnitsPage() {
     }
   };
 
-  const handleDialogOpen = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) {
-      setEditingItem(null);
-      form.reset({ name: "" });
-    }
-  };
-
   const columns: ColumnDef<Unit>[] = [
-    {
-      accessorKey: "name",
-      header: "Name",
-    },
+    { accessorKey: "name", header: "Name" },
     {
       id: "actions",
-      header: "Actions",
+      header: "",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleEdit(row.original)}
-          >
-            <Pencil className="h-4 w-4" />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)} className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600">
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleDelete(row.original.id)}
-            disabled={deleting === row.original.id}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(row.original.id)} disabled={deleting === row.original.id} className="h-8 w-8 hover:bg-red-50 hover:text-red-600">
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       ),
@@ -148,57 +119,41 @@ export default function UnitsPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Units</h1>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add New
+    <div className="max-w-4xl mx-auto">
+      <PageHeader
+        title="Units"
+        description="Units of measurement used across products."
+        action={
+          <Button onClick={() => { setEditingItem(null); form.reset({ name: "" }); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
+            <Plus className="mr-1.5 h-4 w-4" /> Add Unit
           </Button>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingItem ? "Edit Unit" : "Add Unit"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" {...form.register("name")} />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.name.message}
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
-                    ? "Saving..."
-                    : editingItem
-                      ? "Update"
-                      : "Create"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+        }
+      />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      ) : (
-        <DataTable columns={columns} data={data} />
-      )}
+      {loading ? <SkeletonTable rows={5} cols={2} /> : <DataTable columns={columns} data={data} searchKey="name" searchPlaceholder="Search units..." />}
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); form.reset({ name: "" }); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingItem ? "Edit Unit" : "New Unit"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Name *</Label>
+              <Input id="name" {...form.register("name")} placeholder="e.g. Metres" autoFocus />
+              {form.formState.errors.name && (
+                <p className="text-xs text-red-600">{form.formState.errors.name.message}</p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white active:scale-[0.98] transition-all">
+                {form.formState.isSubmitting ? "Saving..." : editingItem ? "Update" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Save, Trash2, Pencil } from "lucide-react";
@@ -134,18 +136,19 @@ export default function OpeningStockPage() {
       cell: ({ row }) => Number(row.original.price).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     },
     {
-      id: "actions", header: "Actions",
+      id: "actions", header: "",
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row.original)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row.original)} className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600">
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost" size="icon" title="Delete"
             onClick={() => handleDelete(row.original.id)}
             disabled={deleting === row.original.id}
+            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       ),
@@ -153,20 +156,19 @@ export default function OpeningStockPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Opening Stock</h1>
-        <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Stock
-        </Button>
-      </div>
+    <div className="max-w-5xl mx-auto">
+      <PageHeader
+        title="Opening Stock"
+        description="Initial stock quantities loaded at system start."
+        action={
+          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
+            <Plus className="mr-1.5 h-4 w-4" /> Add Stock
+          </Button>
+        }
+      />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      ) : (
-        <DataTable columns={columns} data={data} />
+      {loading ? <SkeletonTable rows={6} cols={4} /> : (
+        <DataTable columns={columns} data={data} searchKey="productName" searchPlaceholder="Search by product..." />
       )}
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
@@ -204,8 +206,8 @@ export default function OpeningStockPage() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => { resetForm(); setDialogOpen(false); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving}>
-                <Save className="mr-2 h-4 w-4" />
+              <Button onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-500 text-white active:scale-[0.98] transition-all">
+                <Save className="mr-1.5 h-4 w-4" />
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>

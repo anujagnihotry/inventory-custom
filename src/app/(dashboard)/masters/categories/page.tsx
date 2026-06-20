@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
 import {
   Dialog,
   DialogContent,
@@ -46,41 +48,32 @@ export default function CategoriesPage() {
     try {
       setLoading(true);
       const res = await fetch("/api/masters/categories");
-      if (!res.ok) throw new Error("Failed to fetch categories");
-      const json = await res.json();
-      setData(json);
-    } catch (error) {
+      if (!res.ok) throw new Error();
+      setData(await res.json());
+    } catch {
       toast.error("Failed to load categories");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const onSubmit = async (values: CategoryFormData) => {
     try {
-      const url = editingItem
-        ? `/api/masters/categories/${editingItem.id}`
-        : "/api/masters/categories";
-      const method = editingItem ? "PUT" : "POST";
-
+      const url = editingItem ? `/api/masters/categories/${editingItem.id}` : "/api/masters/categories";
       const res = await fetch(url, {
-        method,
+        method: editingItem ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
-
-      if (!res.ok) throw new Error("Failed to save category");
-
+      if (!res.ok) throw new Error();
       toast.success(editingItem ? "Category updated" : "Category created");
       setDialogOpen(false);
       setEditingItem(null);
       form.reset({ name: "" });
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error("Failed to save category");
     }
   };
@@ -95,9 +88,7 @@ export default function CategoriesPage() {
     if (!confirm("Are you sure you want to delete this category?")) return;
     try {
       setDeleting(id);
-      const res = await fetch(`/api/masters/categories/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/masters/categories/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to delete category");
       toast.success("Category deleted");
@@ -109,38 +100,18 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleDialogOpen = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) {
-      setEditingItem(null);
-      form.reset({ name: "" });
-    }
-  };
-
   const columns: ColumnDef<Category>[] = [
-    {
-      accessorKey: "name",
-      header: "Name",
-    },
+    { accessorKey: "name", header: "Name" },
     {
       id: "actions",
-      header: "Actions",
+      header: "",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleEdit(row.original)}
-          >
-            <Pencil className="h-4 w-4" />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)} className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600">
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleDelete(row.original.id)}
-            disabled={deleting === row.original.id}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(row.original.id)} disabled={deleting === row.original.id} className="h-8 w-8 hover:bg-red-50 hover:text-red-600">
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       ),
@@ -148,57 +119,41 @@ export default function CategoriesPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Categories</h1>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add New
+    <div className="max-w-4xl mx-auto">
+      <PageHeader
+        title="Categories"
+        description="Organise products into top-level categories."
+        action={
+          <Button onClick={() => { setEditingItem(null); form.reset({ name: "" }); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
+            <Plus className="mr-1.5 h-4 w-4" /> Add Category
           </Button>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingItem ? "Edit Category" : "Add Category"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" {...form.register("name")} />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.name.message}
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
-                    ? "Saving..."
-                    : editingItem
-                      ? "Update"
-                      : "Create"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+        }
+      />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      ) : (
-        <DataTable columns={columns} data={data} />
-      )}
+      {loading ? <SkeletonTable rows={5} cols={2} /> : <DataTable columns={columns} data={data} searchKey="name" searchPlaceholder="Search categories..." />}
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); form.reset({ name: "" }); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingItem ? "Edit Category" : "New Category"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Name *</Label>
+              <Input id="name" {...form.register("name")} placeholder="e.g. Scaffolding" autoFocus />
+              {form.formState.errors.name && (
+                <p className="text-xs text-red-600">{form.formState.errors.name.message}</p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white active:scale-[0.98] transition-all">
+                {form.formState.isSubmitting ? "Saving..." : editingItem ? "Update" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonTable } from "@/components/ui/skeleton-table";
 import {
   Dialog,
   DialogContent,
@@ -36,21 +38,16 @@ interface Product {
   subCategoryId?: string;
   unitId: string;
   description?: string;
-  isConsumable?: boolean;
   mil?: string;
-  item?: string;
   itemCode?: string;
   category?: { id: string; name: string };
   subCategory?: { id: string; name: string };
   unit?: { id: string; name: string };
-  createdAt: string;
-  updatedAt: string;
 }
 
-interface SelectOption {
-  id: string;
-  name: string;
-}
+interface SelectOption { id: string; name: string; }
+
+const selectClass = "flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400";
 
 export default function ProductsPage() {
   const [data, setData] = useState<Product[]>([]);
@@ -64,24 +61,16 @@ export default function ProductsPage() {
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: "",
-      categoryId: "",
-      subCategoryId: "",
-      unitId: "",
-      description: "",
-      mil: "",
-    },
+    defaultValues: { name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "" },
   });
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/masters/products");
-      if (!res.ok) throw new Error("Failed to fetch products");
-      const json = await res.json();
-      setData(json);
-    } catch (error) {
+      if (!res.ok) throw new Error();
+      setData(await res.json());
+    } catch {
       toast.error("Failed to load products");
     } finally {
       setLoading(false);
@@ -90,22 +79,16 @@ export default function ProductsPage() {
 
   const fetchDropdowns = async () => {
     try {
-      const [catRes, unitRes] = await Promise.all([
-        fetch("/api/masters/categories"),
-        fetch("/api/masters/units"),
-      ]);
+      const [catRes, unitRes] = await Promise.all([fetch("/api/masters/categories"), fetch("/api/masters/units")]);
       if (catRes.ok) setCategories(await catRes.json());
       if (unitRes.ok) setUnits(await unitRes.json());
-    } catch (error) {
+    } catch {
       toast.error("Failed to load dropdown data");
     }
   };
 
   const fetchSubCategories = useCallback(async (categoryId: string) => {
-    if (!categoryId) {
-      setSubCategories([]);
-      return;
-    }
+    if (!categoryId) { setSubCategories([]); return; }
     try {
       const res = await fetch(`/api/masters/subcategories?categoryId=${categoryId}`);
       if (res.ok) setSubCategories(await res.json());
@@ -115,61 +98,39 @@ export default function ProductsPage() {
     }
   }, []);
 
-  // Watch category changes to filter subcategories
   const selectedCategoryId = form.watch("categoryId");
-
   const [lastCategoryId, setLastCategoryId] = useState<string>("");
 
   useEffect(() => {
     fetchSubCategories(selectedCategoryId);
-    // Clear subcategory selection when category changes (not on initial load)
-    if (lastCategoryId && lastCategoryId !== selectedCategoryId) {
-      form.setValue("subCategoryId", "");
-    }
+    if (lastCategoryId && lastCategoryId !== selectedCategoryId) form.setValue("subCategoryId", "");
     setLastCategoryId(selectedCategoryId);
   }, [selectedCategoryId, fetchSubCategories]);
 
-  useEffect(() => {
-    fetchData();
-    fetchDropdowns();
-  }, []);
+  useEffect(() => { fetchData(); fetchDropdowns(); }, []);
 
   const onSubmit = async (values: ProductFormData) => {
     try {
-      const url = editingItem
-        ? `/api/masters/products/${editingItem.id}`
-        : "/api/masters/products";
-      const method = editingItem ? "PUT" : "POST";
-
-      const payload = {
-        ...values,
-        subCategoryId: values.subCategoryId || undefined,
-      };
-
+      const url = editingItem ? `/api/masters/products/${editingItem.id}` : "/api/masters/products";
       const res = await fetch(url, {
-        method,
+        method: editingItem ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...values, subCategoryId: values.subCategoryId || undefined }),
       });
-
-      if (!res.ok) throw new Error("Failed to save product");
-
+      if (!res.ok) throw new Error();
       toast.success(editingItem ? "Product updated" : "Product created");
       setDialogOpen(false);
       setEditingItem(null);
       form.reset();
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error("Failed to save product");
     }
   };
 
   const handleEdit = async (item: Product) => {
     setEditingItem(item);
-    // Pre-load subcategories for this product's category
-    if (item.categoryId) {
-      await fetchSubCategories(String(item.categoryId));
-    }
+    if (item.categoryId) await fetchSubCategories(String(item.categoryId));
     form.reset({
       name: item.name,
       categoryId: String(item.categoryId),
@@ -185,9 +146,7 @@ export default function ProductsPage() {
     if (!confirm("Are you sure you want to delete this product?")) return;
     try {
       setDeleting(id);
-      const res = await fetch(`/api/masters/products/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/masters/products/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to delete product");
       toast.success("Product deleted");
@@ -201,61 +160,25 @@ export default function ProductsPage() {
 
   const handleDialogOpen = (open: boolean) => {
     setDialogOpen(open);
-    if (!open) {
-      setEditingItem(null);
-      setLastCategoryId("");
-      setSubCategories([]);
-      form.reset({
-        name: "",
-        categoryId: "",
-        subCategoryId: "",
-        unitId: "",
-        description: "",
-        mil: "",
-      });
-    }
+    if (!open) { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "" }); }
   };
 
   const columns: ColumnDef<Product>[] = [
-    {
-      accessorKey: "name",
-      header: "Name",
-    },
-    {
-      accessorKey: "category.name",
-      header: "Category",
-    },
-    {
-      accessorKey: "subCategory.name",
-      header: "Sub Category",
-    },
-    {
-      accessorKey: "unit.name",
-      header: "Unit",
-    },
-    {
-      accessorKey: "itemCode",
-      header: "Item Code",
-    },
+    { accessorKey: "itemCode", header: "Item Code" },
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "category.name", header: "Category" },
+    { accessorKey: "subCategory.name", header: "Sub Category" },
+    { accessorKey: "unit.name", header: "Unit" },
     {
       id: "actions",
-      header: "Actions",
+      header: "",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleEdit(row.original)}
-          >
-            <Pencil className="h-4 w-4" />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)} className="h-8 w-8 hover:bg-indigo-50 hover:text-indigo-600">
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleDelete(row.original.id)}
-            disabled={deleting === row.original.id}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(row.original.id)} disabled={deleting === row.original.id} className="h-8 w-8 hover:bg-red-50 hover:text-red-600">
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       ),
@@ -263,139 +186,78 @@ export default function ProductsPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Products</h1>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add New
+    <div className="max-w-6xl mx-auto">
+      <PageHeader
+        title="Products"
+        description="All stock items tracked in the inventory."
+        action={
+          <Button onClick={() => { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "" }); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
+            <Plus className="mr-1.5 h-4 w-4" /> Add Product
           </Button>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingItem ? "Edit Product" : "Add Product"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input id="name" {...form.register("name")} />
-                  {form.formState.errors.name && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.name.message}
-                    </p>
-                  )}
-                </div>
+        }
+      />
 
-                <div className="space-y-2">
-                  <Label>Item Code</Label>
-                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
-                    {editingItem?.itemCode ?? "Auto-generated (e.g. SC0001)"}
-                  </div>
-                </div>
+      {loading ? <SkeletonTable rows={6} cols={5} /> : <DataTable columns={columns} data={data} searchKey="name" searchPlaceholder="Search products..." />}
 
-                <div className="space-y-2">
-                  <Label htmlFor="categoryId">Category *</Label>
-                  <select
-                    id="categoryId"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    {...form.register("categoryId")}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  {form.formState.errors.categoryId && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.categoryId.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="subCategoryId">Sub Category</Label>
-                  <select
-                    id="subCategoryId"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    {...form.register("subCategoryId")}
-                  >
-                    <option value="">Select sub category</option>
-                    {subCategories.map((sc) => (
-                      <option key={sc.id} value={sc.id}>
-                        {sc.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="unitId">Unit *</Label>
-                  <select
-                    id="unitId"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    {...form.register("unitId")}
-                  >
-                    <option value="">Select unit</option>
-                    {units.map((unit) => (
-                      <option key={unit.id} value={unit.id}>
-                        {unit.name}
-                      </option>
-                    ))}
-                  </select>
-                  {form.formState.errors.unitId && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.unitId.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="mil">MIL Number</Label>
-                  <Input id="mil" {...form.register("mil")} />
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingItem ? "Edit Product" : "New Product"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-1">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Name *</Label>
+                <Input id="name" {...form.register("name")} />
+                {form.formState.errors.name && <p className="text-xs text-red-600">{form.formState.errors.name.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Item Code</Label>
+                <div className="flex h-10 w-full items-center rounded-lg border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  {editingItem?.itemCode ?? "Auto-generated (e.g. SC0001)"}
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  rows={3}
-                  {...form.register("description")}
-                />
+              <div className="space-y-1.5">
+                <Label htmlFor="categoryId">Category *</Label>
+                <select id="categoryId" className={selectClass} {...form.register("categoryId")}>
+                  <option value="">Select category</option>
+                  {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                </select>
+                {form.formState.errors.categoryId && <p className="text-xs text-red-600">{form.formState.errors.categoryId.message}</p>}
               </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
-                    ? "Saving..."
-                    : editingItem
-                      ? "Update"
-                      : "Create"}
-                </Button>
+              <div className="space-y-1.5">
+                <Label htmlFor="subCategoryId">Sub Category</Label>
+                <select id="subCategoryId" className={selectClass} {...form.register("subCategoryId")}>
+                  <option value="">Select sub category</option>
+                  {subCategories.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+                </select>
               </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      ) : (
-        <DataTable columns={columns} data={data} />
-      )}
+              <div className="space-y-1.5">
+                <Label htmlFor="unitId">Unit *</Label>
+                <select id="unitId" className={selectClass} {...form.register("unitId")}>
+                  <option value="">Select unit</option>
+                  {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+                </select>
+                {form.formState.errors.unitId && <p className="text-xs text-red-600">{form.formState.errors.unitId.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="mil">MIL Number</Label>
+                <Input id="mil" {...form.register("mil")} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Description</Label>
+              <Textarea id="description" rows={3} {...form.register("description")} />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button type="button" variant="outline" onClick={() => handleDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="bg-indigo-600 hover:bg-indigo-500 text-white active:scale-[0.98] transition-all">
+                {form.formState.isSubmitting ? "Saving..." : editingItem ? "Update" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
