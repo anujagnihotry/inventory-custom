@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       isConsumable,
       mil,
       item,
+      gst,
     } = body;
 
     if (!name) {
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
         isConsumable: isConsumable ?? false,
         mil: mil || 0,
         item: item || null,
+        gst: gst || 0,
         itemCode,
       },
       include: {

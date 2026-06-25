@@ -55,6 +55,7 @@ model ProductMaster {
   mil           Decimal  @default(0) @db.Decimal(18, 2)
   item          String?  @db.VarChar(250)
   itemCode      String?  @db.VarChar(250)
+  gst           Decimal  @default(0) @db.Decimal(5, 2)
 
   category    Category     @relation(fields: [categoryId], references: [id])
   subCategory SubCategory? @relation(fields: [subCategoryId], references: [id])

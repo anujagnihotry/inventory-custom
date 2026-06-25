@@ -27,6 +27,7 @@ const productSchema = z.object({
   unitId: z.string().min(1, "Unit is required"),
   description: z.string().optional(),
   mil: z.string().optional(),
+  gst: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -39,6 +40,7 @@ interface Product {
   unitId: string;
   description?: string;
   mil?: string;
+  gst?: string;
   itemCode?: string;
   category?: { id: string; name: string };
   subCategory?: { id: string; name: string };
@@ -61,7 +63,7 @@ export default function ProductsPage() {
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "" },
+    defaultValues: { name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "" },
   });
 
   const fetchData = async () => {
@@ -115,7 +117,7 @@ export default function ProductsPage() {
       const res = await fetch(url, {
         method: editingItem ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, subCategoryId: values.subCategoryId || undefined }),
+        body: JSON.stringify({ ...values, subCategoryId: values.subCategoryId || undefined, gst: values.gst || 0 }),
       });
       if (!res.ok) throw new Error();
       toast.success(editingItem ? "Product updated" : "Product created");
@@ -138,6 +140,7 @@ export default function ProductsPage() {
       unitId: String(item.unitId),
       description: item.description || "",
       mil: item.mil || "",
+      gst: item.gst || "",
     });
     setDialogOpen(true);
   };
@@ -160,7 +163,7 @@ export default function ProductsPage() {
 
   const handleDialogOpen = (open: boolean) => {
     setDialogOpen(open);
-    if (!open) { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "" }); }
+    if (!open) { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "" }); }
   };
 
   const columns: ColumnDef<Product>[] = [
@@ -169,6 +172,11 @@ export default function ProductsPage() {
     { accessorKey: "category.name", header: "Category" },
     { accessorKey: "subCategory.name", header: "Sub Category" },
     { accessorKey: "unit.name", header: "Unit" },
+    {
+      accessorKey: "gst",
+      header: "GST %",
+      cell: ({ row }) => row.original.gst ? `${Number(row.original.gst).toFixed(2)}%` : "—",
+    },
     {
       id: "actions",
       header: "",
@@ -191,7 +199,7 @@ export default function ProductsPage() {
         title="Products"
         description="All stock items tracked in the inventory."
         action={
-          <Button onClick={() => { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "" }); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
+          <Button onClick={() => { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "" }); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
             <Plus className="mr-1.5 h-4 w-4" /> Add Product
           </Button>
         }
@@ -243,6 +251,10 @@ export default function ProductsPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="mil">MIL Number</Label>
                 <Input id="mil" {...form.register("mil")} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="gst">GST %</Label>
+                <Input id="gst" type="number" min="0" max="100" step="0.01" placeholder="e.g. 18" {...form.register("gst")} />
               </div>
             </div>
             <div className="space-y-1.5">
