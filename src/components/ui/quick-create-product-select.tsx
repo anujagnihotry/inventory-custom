@@ -27,6 +27,7 @@ interface QuickCreateProductSelectProps {
   required?: boolean;
   selectClassName?: string;
   compact?: boolean;
+  disabled?: boolean;
 }
 
 export function QuickCreateProductSelect({
@@ -38,6 +39,7 @@ export function QuickCreateProductSelect({
   required,
   selectClassName,
   compact = false,
+  disabled = false,
 }: QuickCreateProductSelectProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -104,11 +106,13 @@ export function QuickCreateProductSelect({
         <select
           className={cn(
             `flex ${h} w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400`,
+            disabled && "opacity-50 cursor-not-allowed",
             selectClassName
           )}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
           required={required}
+          disabled={disabled}
         >
           <option value="">{placeholder ?? "Select Product"}</option>
           {options.map((o) => (
@@ -123,6 +127,7 @@ export function QuickCreateProductSelect({
           size="icon"
           className={cn(`${btnH} shrink-0 border-dashed hover:border-indigo-400 hover:text-indigo-600`)}
           onClick={() => setOpen(true)}
+          disabled={disabled}
           title="Add new product"
         >
           <Plus className="h-3.5 w-3.5" />

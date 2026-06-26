@@ -313,9 +313,9 @@ export default function ReturnsPage() {
               <Label>Buyer *</Label>
               <QuickCreateSelect
                 label="Buyer"
-                items={buyers}
+                options={buyers}
                 value={buyerId}
-                onChange={(val) => setBuyerId(val ? parseInt(String(val)) : "")}
+                onChange={(id) => setBuyerId(id)}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}
                 createUrl="/api/masters/buyers"
               />
@@ -399,15 +399,9 @@ export default function ReturnsPage() {
                     <td className="p-2">
                       <QuickCreateProductSelect
                         compact
-                        items={products}
+                        options={products}
                         value={line.productId}
-                        onChange={(val) =>
-                          handleDetailChange(
-                            index,
-                            "productId",
-                            val ? parseInt(String(val)) : ""
-                          )
-                        }
+                        onChange={(id) => handleDetailChange(index, "productId", id)}
                         onAdd={(item) =>
                           setProducts((prev) => [...prev, item])
                         }

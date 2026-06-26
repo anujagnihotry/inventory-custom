@@ -278,7 +278,7 @@ export default function OrderIssuesPage() {
                 createUrl="/api/masters/consignees"
                 options={consignees}
                 value={consigneeId}
-                onChange={(val) => setConsigneeId(val ? parseInt(val) : "")}
+                onChange={(id) => setConsigneeId(id)}
                 onAdd={(item) => setConsignees((prev) => [...prev, item])}
               />
             </div>
@@ -288,7 +288,7 @@ export default function OrderIssuesPage() {
                 createUrl="/api/masters/buyers"
                 options={buyers}
                 value={buyerId}
-                onChange={(val) => setBuyerId(val ? parseInt(val) : "")}
+                onChange={(id) => setBuyerId(id)}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}
               />
             </div>
@@ -340,13 +340,7 @@ export default function OrderIssuesPage() {
                         compact
                         options={products}
                         value={line.productId}
-                        onChange={(val) =>
-                          handleDetailChange(
-                            index,
-                            "productId",
-                            val ? parseInt(val) : ""
-                          )
-                        }
+                        onChange={(id) => handleDetailChange(index, "productId", id)}
                         onAdd={(item) => setProducts((prev) => [...prev, item])}
                       />
                     </td>

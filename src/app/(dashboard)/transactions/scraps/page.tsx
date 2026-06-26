@@ -193,15 +193,16 @@ export default function ScrapsPage() {
                 createUrl="/api/masters/buyers"
                 options={buyers}
                 value={buyerId}
-                onChange={(val) => setBuyerId(val ? parseInt(val) : "")}
+                onChange={(id) => setBuyerId(id)}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}
               />
             </div>
             <div className="space-y-2">
               <QuickCreateProductSelect
                 compact
+                options={products}
                 value={productId}
-                onChange={(val) => setProductId(val ? parseInt(val) : "")}
+                onChange={(id) => setProductId(id)}
                 onAdd={(item) => setProducts((prev) => [...prev, item])}
               />
             </div>
