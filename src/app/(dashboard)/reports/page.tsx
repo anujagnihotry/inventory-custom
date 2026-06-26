@@ -153,14 +153,10 @@ interface HsnRow {
 }
 
 interface SiteEvalRow {
+  buyer: string;
+  name: string;
+  value: number;
   type: string;
-  date: string;
-  description: string;
-  consignee: string;
-  quantity: number;
-  price: number;
-  total: number;
-  jobNo: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -270,8 +266,8 @@ export default function ReportsPage() {
   const [hsnData, setHsnData] = useState<HsnRow[]>([]);
   const [siteEvalData, setSiteEvalData] = useState<SiteEvalRow[]>([]);
   const [siteEvalSummary, setSiteEvalSummary] = useState({
-    totalIssuesValue: 0,
-    totalExpenses: 0,
+    expencesTotal: 0,
+    returnsTotal: 0,
     grandTotal: 0,
   });
 
@@ -457,7 +453,7 @@ export default function ReportsPage() {
       const json = await res.json();
       setSiteEvalData(json.rows || []);
       setSiteEvalSummary(
-        json.summary || { totalIssuesValue: 0, totalExpenses: 0, grandTotal: 0 }
+        json.summary || { expencesTotal: 0, returnsTotal: 0, grandTotal: 0 }
       );
     } catch {
       toast.error("Failed to load site evaluation");
@@ -678,30 +674,16 @@ export default function ReportsPage() {
   ];
 
   const siteEvalColumns: ColumnDef<SiteEvalRow>[] = [
-    { accessorKey: "type", header: "Type" },
+    { accessorKey: "type", header: "Category" },
+    { accessorKey: "name", header: "Description" },
     {
-      accessorKey: "date",
-      header: "Date",
-      cell: ({ row }) => fmtDate(row.original.date),
-    },
-    { accessorKey: "description", header: "Description" },
-    { accessorKey: "consignee", header: "Consignee" },
-    {
-      accessorKey: "quantity",
-      header: "Qty",
-      cell: ({ row }) =>
-        row.original.quantity ? fmt(row.original.quantity) : "-",
-    },
-    {
-      accessorKey: "price",
-      header: "Price",
-      cell: ({ row }) =>
-        row.original.price ? fmt(row.original.price) : "-",
-    },
-    {
-      accessorKey: "total",
-      header: "Total",
-      cell: ({ row }) => fmt(row.original.total),
+      accessorKey: "value",
+      header: "Value (₹)",
+      cell: ({ row }) => (
+        <span className={row.original.value < 0 ? "text-red-600" : ""}>
+          {fmt(row.original.value)}
+        </span>
+      ),
     },
   ];
 
@@ -1215,8 +1197,8 @@ export default function ReportsPage() {
         <DataTable
           columns={siteEvalColumns}
           data={siteEvalData}
-          searchKey="description"
-          searchPlaceholder="Search descriptions..."
+          searchKey="name"
+          searchPlaceholder="Search..."
         />
         {siteEvalData.length > 0 && (
           <Card>
@@ -1226,19 +1208,15 @@ export default function ReportsPage() {
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-950">
-                  <p className="text-sm text-muted-foreground">
-                    Total Issues Value
-                  </p>
+                  <p className="text-sm text-muted-foreground">Total Expenses</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {fmt(siteEvalSummary.totalIssuesValue)}
+                    {fmt(siteEvalSummary.expencesTotal)}
                   </p>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-orange-50 dark:bg-orange-950">
-                  <p className="text-sm text-muted-foreground">
-                    Total Expenses
-                  </p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {fmt(siteEvalSummary.totalExpenses)}
+                <div className="text-center p-4 rounded-lg bg-red-50 dark:bg-red-950">
+                  <p className="text-sm text-muted-foreground">Total Returns</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {fmt(siteEvalSummary.returnsTotal)}
                   </p>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950">
