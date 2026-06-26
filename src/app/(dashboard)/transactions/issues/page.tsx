@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Trash2, ArrowLeft, Save, Pencil, Eye } from "lucide-react";
+import { QuickCreateSelect } from "@/components/ui/quick-create-select";
+import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-select";
 
 interface Buyer { id: number; name: string; }
 interface Consignee { id: number; name: string; }
@@ -408,25 +410,25 @@ export default function IssuesPage() {
             </div>
             <div className="space-y-2">
               <Label>Consignee *</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              <QuickCreateSelect
+                label="Consignee"
                 value={consigneeId}
-                onChange={(e) => setConsigneeId(e.target.value ? parseInt(e.target.value) : "")}
-              >
-                <option value="">Select Consignee</option>
-                {consignees.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+                onChange={setConsigneeId}
+                options={consignees}
+                onAdd={(item) => setConsignees((prev) => [...prev, item])}
+                createUrl="/api/masters/consignees"
+              />
             </div>
             <div className="space-y-2">
               <Label>Buyer *</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              <QuickCreateSelect
+                label="Buyer"
                 value={buyerId}
-                onChange={(e) => setBuyerId(e.target.value ? parseInt(e.target.value) : "")}
-              >
-                <option value="">Select Buyer</option>
-                {buyers.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+                onChange={setBuyerId}
+                options={buyers}
+                onAdd={(item) => setBuyers((prev) => [...prev, item])}
+                createUrl="/api/masters/buyers"
+              />
             </div>
             <div className="space-y-2">
               <Label>Job No</Label>
@@ -479,14 +481,13 @@ export default function IssuesPage() {
                 {details.map((line, index) => (
                   <tr key={index} className="border-b">
                     <td className="p-2">
-                      <select
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                      <QuickCreateProductSelect
                         value={line.productId}
-                        onChange={(e) => handleProductChange(index, e.target.value ? parseInt(e.target.value) : 0)}
-                      >
-                        <option value="">Select Product</option>
-                        {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                        onChange={(id) => handleProductChange(index, id)}
+                        options={products}
+                        onAdd={(item) => setProducts((prev) => [...prev, item])}
+                        compact
+                      />
                     </td>
                     <td className="p-2">
                       <Input type="number" value={line.availableQty} readOnly className="bg-muted h-9" />

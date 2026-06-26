@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { QuickCreateSelect } from "@/components/ui/quick-create-select";
+import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-select";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Save } from "lucide-react";
@@ -186,38 +188,22 @@ export default function ScrapsPage() {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Buyer *</Label>
-              <select
+              <QuickCreateSelect
+                label="Buyer"
+                createUrl="/api/masters/buyers"
+                options={buyers}
                 value={buyerId}
-                onChange={(e) =>
-                  setBuyerId(e.target.value ? parseInt(e.target.value) : "")
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Select Buyer</option>
-                {buyers.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setBuyerId(val ? parseInt(val) : "")}
+                onAdd={(item) => setBuyers((prev) => [...prev, item])}
+              />
             </div>
             <div className="space-y-2">
-              <Label>Product *</Label>
-              <select
+              <QuickCreateProductSelect
+                compact
                 value={productId}
-                onChange={(e) =>
-                  setProductId(e.target.value ? parseInt(e.target.value) : "")
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Select Product</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setProductId(val ? parseInt(val) : "")}
+                onAdd={(item) => setProducts((prev) => [...prev, item])}
+              />
             </div>
             <div className="space-y-2">
               <Label>Job No</Label>

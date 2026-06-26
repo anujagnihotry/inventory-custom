@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
+import { QuickCreateSelect } from "@/components/ui/quick-create-select";
+import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-select";
 
 interface Supplier {
   id: number;
@@ -278,23 +280,14 @@ export default function PurchaseChallansPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Supplier *</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              <QuickCreateSelect
+                label="Supplier *"
+                createUrl="/api/masters/suppliers"
+                options={suppliers}
                 value={supplierId}
-                onChange={(e) =>
-                  setSupplierId(
-                    e.target.value ? parseInt(e.target.value) : ""
-                  )
-                }
-              >
-                <option value="">Select Supplier</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSupplierId(val ? parseInt(String(val)) : "")}
+                onAdd={(item) => setSuppliers((prev) => [...prev, item])}
+              />
             </div>
             <div className="space-y-2">
               <Label>GST</Label>
@@ -349,24 +342,21 @@ export default function PurchaseChallansPage() {
                 {details.map((line, index) => (
                   <tr key={index} className="border-b">
                     <td className="px-3 py-1">
-                      <select
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                      <QuickCreateProductSelect
+                        compact
+                        options={products}
                         value={line.productId}
-                        onChange={(e) =>
+                        onChange={(val) =>
                           handleDetailChange(
                             index,
                             "productId",
-                            e.target.value ? parseInt(e.target.value) : ""
+                            val ? parseInt(String(val)) : ""
                           )
                         }
-                      >
-                        <option value="">Select Product</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
+                        onAdd={(item) =>
+                          setProducts((prev) => [...prev, item])
+                        }
+                      />
                     </td>
                     <td className="px-3 py-1">
                       <Input

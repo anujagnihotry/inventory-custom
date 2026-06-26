@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-select";
 
 interface Product { id: number; name: string; }
 
@@ -179,15 +180,13 @@ export default function OpeningStockPage() {
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Product *</Label>
-              <select
+              <QuickCreateProductSelect
+                options={products}
                 value={productId}
-                onChange={(e) => setProductId(Number(e.target.value))}
-                disabled={!!editingId} // can't change product on edit
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
-              >
-                <option value={0}>-- Select Product --</option>
-                {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+                onChange={(val) => setProductId(Number(val))}
+                onAdd={(item) => setProducts((prev) => [...prev, item])}
+                disabled={!!editingId}
+              />
               {editingId && <p className="text-xs text-muted-foreground">Product cannot be changed when editing.</p>}
             </div>
             <div className="space-y-2">

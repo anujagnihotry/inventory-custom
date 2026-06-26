@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Pencil, Trash2, ArrowLeft, Save, Eye } from "lucide-react";
+import { QuickCreateSelect } from "@/components/ui/quick-create-select";
+import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-select";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -536,20 +538,15 @@ export default function PurchasesPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="supplierId">Supplier *</Label>
-            <select
-              id="supplierId"
+            <QuickCreateSelect
+              label="Supplier"
               value={supplierId}
-              onChange={(e) => setSupplierId(Number(e.target.value))}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option value={0}>-- Select Supplier --</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSupplierId}
+              options={suppliers}
+              onAdd={(item) => setSuppliers((prev) => [...prev, item])}
+              createUrl="/api/masters/suppliers"
+              placeholder="Select Supplier"
+            />
           </div>
 
           <div className="space-y-2">
@@ -623,18 +620,13 @@ export default function PurchasesPage() {
                 <tr key={index} className="border-b">
                   <td className="px-3 py-2 text-muted-foreground">{index + 1}</td>
                   <td className="px-3 py-1">
-                    <select
+                    <QuickCreateProductSelect
                       value={item.productId}
-                      onChange={(e) => updateItem(index, "productId", Number(e.target.value))}
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                    >
-                      <option value={0}>-- Select --</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(id) => updateItem(index, "productId", id)}
+                      options={products}
+                      onAdd={(item) => setProducts((prev) => [...prev, item])}
+                      compact
+                    />
                   </td>
                   <td className="px-3 py-1">
                     <Input

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { QuickCreateSelect } from "@/components/ui/quick-create-select";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Pencil, Trash2, Save } from "lucide-react";
@@ -296,42 +297,24 @@ export default function TransportPage() {
           <div className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Consignee *</Label>
-                <select
+                <QuickCreateSelect
+                  label="Consignee"
+                  createUrl="/api/masters/consignees"
+                  options={consignees}
                   value={consigneeId}
-                  onChange={(e) =>
-                    setConsigneeId(
-                      e.target.value ? parseInt(e.target.value) : ""
-                    )
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Select Consignee</option>
-                  {consignees.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setConsigneeId(val ? parseInt(val) : "")}
+                  onAdd={(item) => setConsignees((prev) => [...prev, item])}
+                />
               </div>
               <div className="space-y-2">
-                <Label>Buyer *</Label>
-                <select
+                <QuickCreateSelect
+                  label="Buyer"
+                  createUrl="/api/masters/buyers"
+                  options={buyers}
                   value={buyerId}
-                  onChange={(e) =>
-                    setBuyerId(
-                      e.target.value ? parseInt(e.target.value) : ""
-                    )
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Select Buyer</option>
-                  {buyers.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setBuyerId(val ? parseInt(val) : "")}
+                  onAdd={(item) => setBuyers((prev) => [...prev, item])}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Date *</Label>

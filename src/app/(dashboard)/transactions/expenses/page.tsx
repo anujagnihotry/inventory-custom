@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { QuickCreateSelect } from "@/components/ui/quick-create-select";
 import { Plus, Pencil, Trash2, Save, Eye } from "lucide-react";
 import {
   Dialog,
@@ -321,41 +322,25 @@ export default function ExpensesPage() {
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Buyer *</Label>
-              <select
+              <QuickCreateSelect
+                label="Buyer"
+                createUrl="/api/masters/buyers"
+                options={buyers}
                 value={buyerId}
-                onChange={(e) =>
-                  setBuyerId(
-                    e.target.value ? parseInt(e.target.value) : ""
-                  )
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Select Buyer</option>
-                {buyers.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setBuyerId(val ? parseInt(String(val)) : "")}
+                onAdd={(item) => setBuyers((prev) => [...prev, item])}
+              />
             </div>
             <div className="space-y-2">
               <Label>Expense Type *</Label>
-              <select
+              <QuickCreateSelect
+                label="Expense Type"
+                createUrl="/api/masters/expense-types"
+                options={expenseTypes}
                 value={expenseTypeId}
-                onChange={(e) =>
-                  setExpenseTypeId(
-                    e.target.value ? parseInt(e.target.value) : ""
-                  )
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Select Expense Type</option>
-                {expenseTypes.map((et) => (
-                  <option key={et.id} value={et.id}>
-                    {et.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setExpenseTypeId(val ? parseInt(String(val)) : "")}
+                onAdd={(item) => setExpenseTypes((prev) => [...prev, item])}
+              />
             </div>
             <div className="space-y-2">
               <Label>Product</Label>
