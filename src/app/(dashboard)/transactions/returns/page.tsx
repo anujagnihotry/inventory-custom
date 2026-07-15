@@ -19,10 +19,17 @@ interface Buyer {
 interface Product {
   id: number;
   name: string;
+  unitId?: number;
+}
+
+interface Unit {
+  id: number;
+  name: string;
 }
 
 interface ReturnDetailLine {
   productId: number | "";
+  unitId: number | "";
   returnQuantity: number | "";
   issuePrice: number | "";
   returnPrice: number | "";
@@ -46,6 +53,7 @@ interface ReturnRecord {
 
 const emptyDetail: ReturnDetailLine = {
   productId: "",
+  unitId: "",
   returnQuantity: "",
   issuePrice: "",
   returnPrice: "",
@@ -62,6 +70,7 @@ export default function ReturnsPage() {
   // Dropdown data
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
 
   // Form state
   const [invoiceNo, setInvoiceNo] = useState("");
@@ -94,12 +103,14 @@ export default function ReturnsPage() {
 
   const fetchDropdowns = useCallback(async () => {
     try {
-      const [buyersRes, productsRes] = await Promise.all([
+      const [buyersRes, productsRes, unitsRes] = await Promise.all([
         fetch("/api/masters/buyers"),
         fetch("/api/masters/products"),
+        fetch("/api/masters/units"),
       ]);
       if (buyersRes.ok) setBuyers(await buyersRes.json());
       if (productsRes.ok) setProducts(await productsRes.json());
+      if (unitsRes.ok) setUnits(await unitsRes.json());
     } catch {
       toast.error("Failed to load dropdown data");
     }
@@ -128,7 +139,12 @@ export default function ReturnsPage() {
     value: string | number
   ) => {
     const newDetails = [...details];
-    (newDetails[index] as unknown as Record<string, unknown>)[field] = value;
+    const line = { ...newDetails[index], [field]: value };
+    if (field === "productId") {
+      const prod = products.find((p) => p.id === Number(value));
+      if (prod?.unitId) line.unitId = prod.unitId;
+    }
+    newDetails[index] = line;
     setDetails(newDetails);
   };
 
@@ -185,6 +201,7 @@ export default function ReturnsPage() {
           remark,
           details: validDetails.map((d) => ({
             productId: d.productId,
+            unitId: d.unitId || null,
             returnQuantity: d.returnQuantity,
             issuePrice: d.issuePrice || 0,
             returnPrice: d.returnPrice || 0,
@@ -385,6 +402,7 @@ export default function ReturnsPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-2 min-w-[200px]">Product</th>
+                  <th className="text-left p-2 w-[120px]">Unit</th>
                   <th className="text-left p-2 w-[120px]">Return Qty</th>
                   <th className="text-left p-2 w-[120px]">Issue Price</th>
                   <th className="text-left p-2 w-[120px]">Return Price</th>
@@ -406,6 +424,18 @@ export default function ReturnsPage() {
                           setProducts((prev) => [...prev, item])
                         }
                       />
+                    </td>
+                    <td className="p-2">
+                      <select
+                        value={line.unitId}
+                        onChange={(e) => handleDetailChange(index, "unitId", e.target.value ? Number(e.target.value) : "")}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                      >
+                        <option value="">-- Unit --</option>
+                        {units.map((u) => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="p-2">
                       <Input

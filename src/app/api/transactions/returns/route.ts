@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
             create: details.map(
               (d: {
                 productId: number;
+                unitId?: number;
                 returnQuantity: number;
                 issuePrice: number;
                 returnPrice: number;
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
                 issueId?: number;
               }) => ({
                 productId: parseInt(String(d.productId)),
+                unitId: d.unitId ? parseInt(String(d.unitId)) : null,
                 returnQuantity: parseFloat(String(d.returnQuantity)),
                 issuePrice: parseFloat(String(d.issuePrice)) || 0,
                 returnPrice: parseFloat(String(d.returnPrice)) || 0,
