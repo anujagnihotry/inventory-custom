@@ -20,10 +20,7 @@ interface Buyer {
   id: number;
   name: string;
 }
-interface Product {
-  id: number;
-  name: string;
-}
+
 interface ExpenseType {
   id: number;
   name: string;
@@ -37,10 +34,8 @@ interface ExpenseRow {
   expenseTypeId: number;
   amount: string;
   remark: string | null;
-  productId: number | null;
   buyer: { id: number; name: string };
   expenseType: { id: number; name: string };
-  product: { id: number; name: string } | null;
 }
 
 export default function ExpensesPage() {
@@ -54,7 +49,6 @@ export default function ExpensesPage() {
   const [viewingRow, setViewingRow] = useState<ExpenseRow | null>(null);
 
   const [buyers, setBuyers] = useState<Buyer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
 
   const [buyerId, setBuyerId] = useState<number | "">("");
@@ -65,7 +59,6 @@ export default function ExpensesPage() {
   const [expenseTypeId, setExpenseTypeId] = useState<number | "">("");
   const [amount, setAmount] = useState<number | "">("");
   const [remark, setRemark] = useState("");
-  const [productId, setProductId] = useState<number | "">("");
 
   const fetchData = useCallback(async () => {
     try {
@@ -82,13 +75,11 @@ export default function ExpensesPage() {
 
   const fetchDropdowns = useCallback(async () => {
     try {
-      const [bRes, pRes, eRes] = await Promise.all([
+      const [bRes, eRes] = await Promise.all([
         fetch("/api/masters/buyers"),
-        fetch("/api/masters/products"),
         fetch("/api/masters/expense-types"),
       ]);
       if (bRes.ok) setBuyers(await bRes.json());
-      if (pRes.ok) setProducts(await pRes.json());
       if (eRes.ok) setExpenseTypes(await eRes.json());
     } catch {
       toast.error("Failed to load dropdown data");
@@ -108,7 +99,6 @@ export default function ExpensesPage() {
     setExpenseTypeId("");
     setAmount("");
     setRemark("");
-    setProductId("");
   };
 
   const openEditDialog = (row: ExpenseRow) => {
@@ -121,7 +111,6 @@ export default function ExpensesPage() {
     setExpenseTypeId(row.expenseTypeId);
     setAmount(Number(row.amount) || "");
     setRemark(row.remark || "");
-    setProductId(row.productId || "");
     setDialogOpen(true);
   };
 
@@ -140,7 +129,6 @@ export default function ExpensesPage() {
         expenseTypeId,
         amount,
         remark,
-        productId: productId || null,
       };
 
       const url = editingId
@@ -205,12 +193,7 @@ export default function ExpensesPage() {
     },
     {
       accessorKey: "jobCardNo",
-      header: "Job Card No",
-    },
-    {
-      accessorFn: (row) => row.product?.name,
-      id: "productName",
-      header: "Product",
+      header: "Job No",
     },
     {
       accessorKey: "amount",
@@ -292,9 +275,8 @@ export default function ExpensesPage() {
               {[
                 ["Date", new Date(viewingRow.expenseDate).toLocaleDateString("en-IN")],
                 ["Buyer", viewingRow.buyer?.name],
+                ["Job No", viewingRow.jobCardNo || "-"],
                 ["Expense Type", viewingRow.expenseType?.name],
-                ["Product", viewingRow.product?.name || "-"],
-                ["Job Card No", viewingRow.jobCardNo || "-"],
                 ["Amount", Number(viewingRow.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })],
                 ["Remark", viewingRow.remark || "-"],
               ].map(([label, value]) => (
@@ -332,6 +314,13 @@ export default function ExpensesPage() {
               />
             </div>
             <div className="space-y-2">
+              <Label>Job No</Label>
+              <Input
+                value={jobCardNo}
+                onChange={(e) => setJobCardNo(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Expense Type *</Label>
               <QuickCreateSelect
                 label="Expense Type"
@@ -341,25 +330,6 @@ export default function ExpensesPage() {
                 onChange={(val) => setExpenseTypeId(val ? parseInt(String(val)) : "")}
                 onAdd={(item) => setExpenseTypes((prev) => [...prev, item])}
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Product</Label>
-              <select
-                value={productId}
-                onChange={(e) =>
-                  setProductId(
-                    e.target.value ? parseInt(e.target.value) : ""
-                  )
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Select Product (optional)</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -383,13 +353,6 @@ export default function ExpensesPage() {
                   onChange={(e) => setExpenseDate(e.target.value)}
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Job Card No</Label>
-              <Input
-                value={jobCardNo}
-                onChange={(e) => setJobCardNo(e.target.value)}
-              />
             </div>
             <div className="space-y-2">
               <Label>Remark</Label>

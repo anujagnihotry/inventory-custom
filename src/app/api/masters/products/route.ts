@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       mil,
       item,
       gst,
+      hsn,
     } = body;
 
     if (!name) {
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
         mil: mil || 0,
         item: item || null,
         gst: gst || 0,
+        hsn: hsn || null,
         itemCode,
       },
       include: {

@@ -50,6 +50,7 @@ export async function PUT(
       mil,
       item,
       gst,
+      hsn,
     } = body;
 
     if (!name) {
@@ -71,6 +72,7 @@ export async function PUT(
         mil: mil || 0,
         item: item || null,
         gst: gst || 0,
+        hsn: hsn || null,
         // itemCode is never updated — it is auto-generated on creation and immutable
       },
       include: {

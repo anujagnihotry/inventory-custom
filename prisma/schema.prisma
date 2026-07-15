@@ -39,9 +39,10 @@ model SubCategory {
 }
 
 model UnitMaster {
-  id       Int            @id @default(autoincrement())
-  name     String         @db.VarChar(250)
-  products ProductMaster[]
+  id              Int              @id @default(autoincrement())
+  name            String           @db.VarChar(250)
+  products        ProductMaster[]
+  purchaseDetails PurchaseDetail[]
 }
 
 model ProductMaster {
@@ -55,6 +56,7 @@ model ProductMaster {
   mil           Decimal  @default(0) @db.Decimal(18, 2)
   item          String?  @db.VarChar(250)
   itemCode      String?  @db.VarChar(250)
+  hsn           String?  @db.VarChar(50)
   gst           Decimal  @default(0) @db.Decimal(5, 2)
 
   category    Category     @relation(fields: [categoryId], references: [id])
@@ -179,8 +181,10 @@ model PurchaseDetail {
   id          Int     @id @default(autoincrement())
   purchaseId  Int
   productId   Int
+  unitId      Int?
   description String? @db.Text
   hsn         String? @db.VarChar(50)
+  gst         Decimal @default(0) @db.Decimal(5, 2)
   quantity    Decimal @db.Decimal(18, 4)
   price       Decimal @db.Decimal(18, 4)
   freight     Decimal @default(0) @db.Decimal(18, 4)
@@ -188,6 +192,7 @@ model PurchaseDetail {
 
   purchase Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   product  ProductMaster @relation(fields: [productId], references: [id])
+  unit     UnitMaster?   @relation(fields: [unitId], references: [id])
 }
 
 model PurchaseChallan {

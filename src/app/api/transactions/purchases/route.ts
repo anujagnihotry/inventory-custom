@@ -67,8 +67,10 @@ export async function POST(request: NextRequest) {
           data: {
             purchaseId: purchase.id,
             productId: Number(detail.productId),
+            unitId: detail.unitId ? Number(detail.unitId) : null,
             description: detail.description || null,
             hsn: detail.hsn || null,
+            gst: detail.gst || 0,
             quantity: detail.quantity,
             price: detail.price,
             freight: detail.freight || 0,

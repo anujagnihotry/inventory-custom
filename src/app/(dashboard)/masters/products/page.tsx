@@ -28,6 +28,7 @@ const productSchema = z.object({
   description: z.string().optional(),
   mil: z.string().optional(),
   gst: z.string().optional(),
+  hsn: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -41,6 +42,7 @@ interface Product {
   description?: string;
   mil?: string;
   gst?: string;
+  hsn?: string;
   itemCode?: string;
   category?: { id: string; name: string };
   subCategory?: { id: string; name: string };
@@ -63,7 +65,7 @@ export default function ProductsPage() {
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "" },
+    defaultValues: { name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "", hsn: "" },
   });
 
   const fetchData = async () => {
@@ -141,6 +143,7 @@ export default function ProductsPage() {
       description: item.description || "",
       mil: item.mil || "",
       gst: item.gst || "",
+      hsn: item.hsn || "",
     });
     setDialogOpen(true);
   };
@@ -163,11 +166,12 @@ export default function ProductsPage() {
 
   const handleDialogOpen = (open: boolean) => {
     setDialogOpen(open);
-    if (!open) { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "" }); }
+    if (!open) { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "", hsn: "" }); }
   };
 
   const columns: ColumnDef<Product>[] = [
     { accessorKey: "itemCode", header: "Item Code" },
+    { accessorKey: "hsn", header: "HSN Code" },
     { accessorKey: "name", header: "Name" },
     { accessorKey: "category.name", header: "Category" },
     { accessorKey: "subCategory.name", header: "Sub Category" },
@@ -199,7 +203,7 @@ export default function ProductsPage() {
         title="Products"
         description="All stock items tracked in the inventory."
         action={
-          <Button onClick={() => { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "" }); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
+          <Button onClick={() => { setEditingItem(null); setLastCategoryId(""); setSubCategories([]); form.reset({ name: "", categoryId: "", subCategoryId: "", unitId: "", description: "", mil: "", gst: "", hsn: "" }); setDialogOpen(true); }} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm shadow-indigo-500/20 active:scale-[0.98] transition-all">
             <Plus className="mr-1.5 h-4 w-4" /> Add Product
           </Button>
         }
@@ -251,6 +255,10 @@ export default function ProductsPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="mil">MIL Number</Label>
                 <Input id="mil" {...form.register("mil")} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="hsn">HSN Code</Label>
+                <Input id="hsn" placeholder="e.g. 73084000" {...form.register("hsn")} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="gst">GST %</Label>

@@ -21,12 +21,17 @@ interface Supplier {
 interface Product {
   id: number;
   name: string;
+  hsn?: string;
+  gst?: number;
+  unitId?: number;
 }
 
 interface PurchaseItem {
   productId: number;
   description: string;
   hsn: string;
+  gst: number;
+  unitId: number;
   quantity: number;
   price: number;
   freight: number;
@@ -52,11 +57,14 @@ interface PurchaseDetail {
   productId: number;
   description: string | null;
   hsn: string | null;
+  gst: number | null;
+  unitId: number | null;
   quantity: number;
   price: number;
   freight: number;
   total: number;
   product: { id: number; name: string };
+  unit: { id: number; name: string } | null;
 }
 
 interface PurchaseFull extends PurchaseRow {
@@ -69,6 +77,8 @@ const emptyItem = (): PurchaseItem => ({
   productId: 0,
   description: "",
   hsn: "",
+  gst: 0,
+  unitId: 0,
   quantity: 0,
   price: 0,
   freight: 0,
@@ -88,6 +98,7 @@ export default function PurchasesPage() {
   // Master data for dropdowns
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [units, setUnits] = useState<{ id: number; name: string }[]>([]);
 
   // Form state
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -118,12 +129,14 @@ export default function PurchasesPage() {
 
   const fetchMasterData = useCallback(async () => {
     try {
-      const [suppRes, prodRes] = await Promise.all([
+      const [suppRes, prodRes, unitRes] = await Promise.all([
         fetch("/api/masters/suppliers"),
         fetch("/api/masters/products"),
+        fetch("/api/masters/units"),
       ]);
       if (suppRes.ok) setSuppliers(await suppRes.json());
       if (prodRes.ok) setProducts(await prodRes.json());
+      if (unitRes.ok) setUnits(await unitRes.json());
     } catch {
       toast.error("Failed to load master data");
     }
@@ -146,12 +159,23 @@ export default function PurchasesPage() {
       const updated = [...prev];
       const item = { ...updated[index], [field]: value };
 
-      // Auto-calculate total when qty, price, or freight change
-      if (field === "quantity" || field === "price" || field === "freight") {
-        const qty = field === "quantity" ? Number(value) : item.quantity;
-        const price = field === "price" ? Number(value) : item.price;
-        const freight = field === "freight" ? Number(value) : item.freight;
-        item.total = Math.round((qty * price + freight) * 10000) / 10000;
+      // When product changes, auto-fill hsn, gst, unitId
+      if (field === "productId") {
+        const prod = products.find((p) => p.id === Number(value));
+        if (prod) {
+          item.hsn = prod.hsn || "";
+          item.gst = Number(prod.gst) || 0;
+          item.unitId = prod.unitId || 0;
+        }
+      }
+
+      // Recalculate total: (qty × price) × (1 + gst/100) + freight
+      if (["quantity", "price", "freight", "gst", "productId"].includes(field as string)) {
+        const qty = Number(item.quantity) || 0;
+        const price = Number(item.price) || 0;
+        const freight = Number(item.freight) || 0;
+        const gst = Number(item.gst) || 0;
+        item.total = Math.round((qty * price * (1 + gst / 100) + freight) * 10000) / 10000;
       }
 
       updated[index] = item;
@@ -204,6 +228,8 @@ export default function PurchasesPage() {
           productId: d.productId as number,
           description: (d.description as string) || "",
           hsn: (d.hsn as string) || "",
+          gst: Number(d.gst) || 0,
+          unitId: Number(d.unitId) || 0,
           quantity: Number(d.quantity),
           price: Number(d.price),
           freight: Number(d.freight),
@@ -415,6 +441,8 @@ export default function PurchasesPage() {
                   <th className="px-3 py-2 text-left font-medium">Product</th>
                   <th className="px-3 py-2 text-left font-medium">Description</th>
                   <th className="px-3 py-2 text-left font-medium">HSN</th>
+                  <th className="px-3 py-2 text-right font-medium">GST %</th>
+                  <th className="px-3 py-2 text-left font-medium">Unit</th>
                   <th className="px-3 py-2 text-right font-medium">Qty</th>
                   <th className="px-3 py-2 text-right font-medium">Price</th>
                   <th className="px-3 py-2 text-right font-medium">Freight</th>
@@ -428,6 +456,8 @@ export default function PurchasesPage() {
                     <td className="px-3 py-2">{d.product?.name}</td>
                     <td className="px-3 py-2">{d.description || "-"}</td>
                     <td className="px-3 py-2">{d.hsn || "-"}</td>
+                    <td className="px-3 py-2 text-right">{Number(d.gst || 0).toFixed(2)}%</td>
+                    <td className="px-3 py-2">{d.unit?.name ?? '-'}</td>
                     <td className="px-3 py-2 text-right">{Number(d.quantity).toLocaleString("en-IN")}</td>
                     <td className="px-3 py-2 text-right">{Number(d.price).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
                     <td className="px-3 py-2 text-right">{Number(d.freight).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
@@ -608,6 +638,8 @@ export default function PurchasesPage() {
                 <th className="px-3 py-2 text-left font-medium min-w-[200px]">Product *</th>
                 <th className="px-3 py-2 text-left font-medium min-w-[150px]">Description</th>
                 <th className="px-3 py-2 text-left font-medium w-[100px]">HSN</th>
+                <th className="px-3 py-2 text-right font-medium w-[80px]">GST %</th>
+                <th className="px-3 py-2 text-left font-medium w-[130px]">Unit</th>
                 <th className="px-3 py-2 text-right font-medium w-[100px]">Quantity</th>
                 <th className="px-3 py-2 text-right font-medium w-[120px]">Price</th>
                 <th className="px-3 py-2 text-right font-medium w-[100px]">Freight</th>
@@ -643,6 +675,29 @@ export default function PurchasesPage() {
                       className="h-9"
                       placeholder="HSN"
                     />
+                  </td>
+                  <td className="px-3 py-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={item.gst}
+                      onChange={(e) => updateItem(index, "gst", Number(e.target.value))}
+                      className="h-9 w-full text-right"
+                    />
+                  </td>
+                  <td className="px-3 py-1">
+                    <select
+                      value={item.unitId}
+                      onChange={(e) => updateItem(index, "unitId", Number(e.target.value))}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                    >
+                      <option value={0}>-- Unit --</option>
+                      {units.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-3 py-1">
                     <Input
