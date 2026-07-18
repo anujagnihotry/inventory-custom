@@ -28,7 +28,6 @@ interface Product {
 
 interface PurchaseItem {
   productId: number;
-  description: string;
   hsn: string;
   gst: number;
   unitId: number;
@@ -55,7 +54,6 @@ interface PurchaseRow {
 interface PurchaseDetail {
   id: number;
   productId: number;
-  description: string | null;
   hsn: string | null;
   gst: number | null;
   unitId: number | null;
@@ -75,7 +73,6 @@ interface PurchaseFull extends PurchaseRow {
 
 const emptyItem = (): PurchaseItem => ({
   productId: 0,
-  description: "",
   hsn: "",
   gst: 0,
   unitId: 0,
@@ -226,7 +223,6 @@ export default function PurchasesPage() {
       setItems(
         data.details.map((d: Record<string, unknown>) => ({
           productId: d.productId as number,
-          description: (d.description as string) || "",
           hsn: (d.hsn as string) || "",
           gst: Number(d.gst) || 0,
           unitId: Number(d.unitId) || 0,
@@ -439,7 +435,6 @@ export default function PurchasesPage() {
                 <tr className="border-b bg-muted/50">
                   <th className="px-3 py-2 text-left font-medium w-10">#</th>
                   <th className="px-3 py-2 text-left font-medium">Product</th>
-                  <th className="px-3 py-2 text-left font-medium">Description</th>
                   <th className="px-3 py-2 text-left font-medium">HSN</th>
                   <th className="px-3 py-2 text-right font-medium">GST %</th>
                   <th className="px-3 py-2 text-left font-medium">Unit</th>
@@ -454,7 +449,6 @@ export default function PurchasesPage() {
                   <tr key={d.id} className="border-b">
                     <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
                     <td className="px-3 py-2">{d.product?.name}</td>
-                    <td className="px-3 py-2">{d.description || "-"}</td>
                     <td className="px-3 py-2">{d.hsn || "-"}</td>
                     <td className="px-3 py-2 text-right">{Number(d.gst || 0).toFixed(2)}%</td>
                     <td className="px-3 py-2">{d.unit?.name ?? '-'}</td>
@@ -636,7 +630,6 @@ export default function PurchasesPage() {
               <tr className="border-b bg-muted/50">
                 <th className="px-3 py-2 text-left font-medium w-10">#</th>
                 <th className="px-3 py-2 text-left font-medium min-w-[200px]">Product *</th>
-                <th className="px-3 py-2 text-left font-medium min-w-[150px]">Description</th>
                 <th className="px-3 py-2 text-left font-medium w-[100px]">HSN</th>
                 <th className="px-3 py-2 text-right font-medium w-[80px]">GST %</th>
                 <th className="px-3 py-2 text-left font-medium w-[130px]">Unit</th>
@@ -658,14 +651,6 @@ export default function PurchasesPage() {
                       options={products}
                       onAdd={(item) => setProducts((prev) => [...prev, item])}
                       compact
-                    />
-                  </td>
-                  <td className="px-3 py-1">
-                    <Input
-                      value={item.description}
-                      onChange={(e) => updateItem(index, "description", e.target.value)}
-                      className="h-9"
-                      placeholder="Description"
                     />
                   </td>
                   <td className="px-3 py-1">
