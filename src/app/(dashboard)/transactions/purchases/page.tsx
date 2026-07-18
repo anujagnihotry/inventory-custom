@@ -306,14 +306,17 @@ export default function PurchasesPage() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to save purchase");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to save purchase");
+      }
 
       toast.success(editingId ? "Purchase updated" : "Purchase created");
       resetForm();
       setMode("list");
       fetchPurchases();
-    } catch {
-      toast.error("Failed to save purchase");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save purchase");
     } finally {
       setSaving(false);
     }

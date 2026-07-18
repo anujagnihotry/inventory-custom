@@ -65,6 +65,25 @@ export async function PUT(
       );
     }
 
+    // Guard: block edit if any stock from this purchase has been issued or scrapped
+    const purchaseStocks = await prisma.stock.findMany({
+      where: { purchaseId },
+      select: { id: true },
+    });
+    const stockIds = purchaseStocks.map((s) => s.id);
+    if (stockIds.length > 0) {
+      const [issuedCount, scrappedCount] = await Promise.all([
+        prisma.issueStockRecord.count({ where: { stockId: { in: stockIds } } }),
+        prisma.scrapFromStock.count({ where: { stockId: { in: stockIds } } }),
+      ]);
+      if (issuedCount > 0 || scrappedCount > 0) {
+        return NextResponse.json(
+          { error: "Cannot edit this purchase — some items have already been issued or scrapped. Please delete or edit the related transactions first." },
+          { status: 400 }
+        );
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // Delete old stock entries related to this purchase
       await tx.stock.deleteMany({
