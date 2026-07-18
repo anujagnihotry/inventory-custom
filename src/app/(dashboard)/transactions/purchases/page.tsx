@@ -105,7 +105,6 @@ export default function PurchasesPage() {
   const [vehicleNo, setVehicleNo] = useState("");
   const [transport, setTransport] = useState("");
   const [receivingDate, setReceivingDate] = useState("");
-  const [gst, setGst] = useState<number>(0);
   const [items, setItems] = useState<PurchaseItem[]>([emptyItem()]);
 
   // ─── Data fetching ────────────────────────────────────────────────────────
@@ -147,7 +146,19 @@ export default function PurchasesPage() {
   // ─── Computed totals ──────────────────────────────────────────────────────
 
   const grandTotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-  const netAmount = grandTotal + gst;
+  const subTotal = items.reduce((sum, item) => {
+    const qty = Number(item.quantity) || 0;
+    const price = Number(item.price) || 0;
+    const freight = Number(item.freight) || 0;
+    return sum + qty * price + freight;
+  }, 0);
+  const gstAmount = items.reduce((sum, item) => {
+    const qty = Number(item.quantity) || 0;
+    const price = Number(item.price) || 0;
+    const gstPct = Number(item.gst) || 0;
+    return sum + qty * price * gstPct / 100;
+  }, 0);
+  const netAmount = subTotal + gstAmount; // same as grandTotal
 
   // ─── Line item helpers ────────────────────────────────────────────────────
 
@@ -197,7 +208,6 @@ export default function PurchasesPage() {
     setVehicleNo("");
     setTransport("");
     setReceivingDate("");
-    setGst(0);
     setItems([emptyItem()]);
   };
 
@@ -219,7 +229,6 @@ export default function PurchasesPage() {
       setVehicleNo(data.vehicleNo || "");
       setTransport(data.transport || "");
       setReceivingDate(data.receivingDate ? data.receivingDate.substring(0, 10) : "");
-      setGst(Number(data.gst) || 0);
       setItems(
         data.details.map((d: Record<string, unknown>) => ({
           productId: d.productId as number,
@@ -277,8 +286,8 @@ export default function PurchasesPage() {
         invoiceNo,
         supplierId,
         date,
-        total: grandTotal,
-        gst,
+        total: subTotal,
+        gst: gstAmount,
         netAmount,
         vehicleNo,
         transport,
@@ -736,24 +745,19 @@ export default function PurchasesPage() {
       <div className="rounded-md border p-4">
         <div className="flex justify-end">
           <div className="w-full max-w-sm space-y-3">
+            {/* Sub Total (before GST) */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Sub Total:</span>
               <span className="text-sm font-semibold">
-                {grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                {subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <Label htmlFor="gst" className="text-sm font-medium whitespace-nowrap">
-                GST:
-              </Label>
-              <Input
-                id="gst"
-                type="number"
-                value={gst || ""}
-                onChange={(e) => setGst(Number(e.target.value))}
-                className="h-9 w-[150px] text-right"
-                min={0}
-              />
+            {/* GST - auto computed */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">GST:</span>
+              <span className="text-sm font-semibold">
+                {gstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </span>
             </div>
             <div className="flex items-center justify-between border-t pt-3">
               <span className="text-base font-bold">Net Amount:</span>

@@ -86,6 +86,8 @@ export async function POST(request: NextRequest) {
                 total: number;
                 issuePrice: number;
                 remark: string;
+                hsn?: string;
+                gst?: number;
               }) => ({
                 productId: parseInt(String(d.productId)),
                 quantity: parseFloat(String(d.quantity)),
@@ -94,6 +96,8 @@ export async function POST(request: NextRequest) {
                 total: parseFloat(String(d.total)),
                 issuePrice: parseFloat(String(d.issuePrice)) || 0,
                 remark: d.remark || null,
+                hsn: d.hsn || null,
+                gst: d.gst || 0,
               })
             ),
           },

@@ -13,28 +13,30 @@ import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-s
 
 interface Buyer { id: number; name: string; }
 interface Consignee { id: number; name: string; }
-interface Product { id: number; name: string; }
+interface Product { id: number; name: string; hsn?: string; gst?: number; }
 
 interface IssueDetailLine {
   productId: number | "";
   availableQty: number;
+  hsn: string;
+  gst: number;
   quantity: number | "";
   price: number | "";
   freight: number | "";
   total: number;
   issuePrice: number | "";
-  remark: string;
 }
 
 interface IssueDetailRecord {
   id: number;
   productId: number;
+  hsn: string | null;
+  gst: string;
   quantity: string;
   price: string;
   freight: string;
   total: string;
   issuePrice: string;
-  remark: string | null;
   product: { id: number; name: string };
 }
 
@@ -56,8 +58,8 @@ interface Issue {
 }
 
 const emptyDetail: IssueDetailLine = {
-  productId: "", availableQty: 0, quantity: "", price: "",
-  freight: "", total: 0, issuePrice: "", remark: "",
+  productId: "", availableQty: 0, hsn: "", gst: 0,
+  quantity: "", price: "", freight: "", total: 0, issuePrice: "",
 };
 
 export default function IssuesPage() {
@@ -132,10 +134,17 @@ export default function IssuesPage() {
       newDetails[index].availableQty = stock.totalQty;
       newDetails[index].price = parseFloat(stock.avgPrice.toFixed(2));
       newDetails[index].issuePrice = parseFloat(stock.avgPrice.toFixed(2));
+      const prod = products.find((p) => p.id === productId);
+      if (prod) {
+        newDetails[index].hsn = prod.hsn || "";
+        newDetails[index].gst = Number(prod.gst) || 0;
+      }
     } else {
       newDetails[index].availableQty = 0;
       newDetails[index].price = "";
       newDetails[index].issuePrice = "";
+      newDetails[index].hsn = "";
+      newDetails[index].gst = 0;
     }
     recalcLineTotal(newDetails, index);
     setDetails(newDetails);
@@ -150,13 +159,23 @@ export default function IssuesPage() {
 
   const recalcLineTotal = (lines: IssueDetailLine[], index: number) => {
     const line = lines[index];
+    const qty = Number(line.quantity) || 0;
+    const price = Number(line.price) || 0;
+    const freight = Number(line.freight) || 0;
+    const gstPct = Number(line.gst) || 0;
     lines[index].total = parseFloat(
-      (Number(line.quantity) * Number(line.price) + Number(line.freight)).toFixed(2)
+      (qty * price * (1 + gstPct / 100) + freight).toFixed(2)
     );
   };
 
-  const calculateGrandTotal = () =>
-    details.reduce((sum, d) => sum + (d.total || 0), 0).toFixed(2);
+  const grandTotal = details.reduce((sum, d) => sum + (d.total || 0), 0);
+  const subTotal = details.reduce((sum, d) => {
+    const qty = Number(d.quantity) || 0;
+    const price = Number(d.price) || 0;
+    const freight = Number(d.freight) || 0;
+    return sum + qty * price + freight;
+  }, 0);
+  const gstTotal = grandTotal - subTotal;
 
   const handleView = async (id: number) => {
     try {
@@ -190,12 +209,13 @@ export default function IssuesPage() {
             return {
               productId: d.productId,
               availableQty: stock.totalQty,
+              hsn: d.hsn || "",
+              gst: Number(d.gst) || 0,
               quantity: parseFloat(d.quantity),
               price: parseFloat(d.price),
               freight: parseFloat(d.freight),
               total: parseFloat(d.total),
               issuePrice: parseFloat(d.issuePrice),
-              remark: d.remark || "",
             };
           })
         );
@@ -225,12 +245,13 @@ export default function IssuesPage() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date, consigneeId, buyerId, total: calculateGrandTotal(),
+          date, consigneeId, buyerId, total: grandTotal.toFixed(2),
           vehicleNo, transport, freight: freight || 0, remark, jobNo,
           details: validDetails.map((d) => ({
             productId: d.productId, quantity: d.quantity,
             price: d.price || 0, freight: d.freight || 0,
-            total: d.total, issuePrice: d.issuePrice || 0, remark: d.remark,
+            total: d.total, issuePrice: d.issuePrice || 0,
+            hsn: d.hsn || null, gst: d.gst || 0,
           })),
         }),
       });
@@ -348,12 +369,13 @@ export default function IssuesPage() {
                 <tr className="border-b bg-muted/50">
                   <th className="text-left p-2">#</th>
                   <th className="text-left p-2">Product</th>
+                  <th className="text-left p-2">HSN</th>
+                  <th className="text-right p-2">GST %</th>
                   <th className="text-right p-2">Qty</th>
                   <th className="text-right p-2">Price</th>
                   <th className="text-right p-2">Freight</th>
                   <th className="text-right p-2">Total</th>
                   <th className="text-right p-2">Issue Price</th>
-                  <th className="text-left p-2">Remark</th>
                 </tr>
               </thead>
               <tbody>
@@ -361,21 +383,25 @@ export default function IssuesPage() {
                   <tr key={d.id} className="border-b">
                     <td className="p-2">{i + 1}</td>
                     <td className="p-2">{d.product?.name}</td>
+                    <td className="p-2">{d.hsn || "-"}</td>
+                    <td className="p-2 text-right">{Number(d.gst || 0).toFixed(2)}%</td>
                     <td className="p-2 text-right">{parseFloat(d.quantity).toFixed(2)}</td>
                     <td className="p-2 text-right">{parseFloat(d.price).toFixed(2)}</td>
                     <td className="p-2 text-right">{parseFloat(d.freight).toFixed(2)}</td>
                     <td className="p-2 text-right">{parseFloat(d.total).toFixed(2)}</td>
                     <td className="p-2 text-right">{parseFloat(d.issuePrice).toFixed(2)}</td>
-                    <td className="p-2">{d.remark || "-"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <div className="flex justify-end">
-            <p className="text-lg font-bold">
-              Grand Total: {parseFloat(viewingIssue.total).toFixed(2)}
-            </p>
+            <div className="space-y-1 text-sm text-right">
+              <div className="flex justify-between gap-12">
+                <span className="text-muted-foreground">Grand Total:</span>
+                <span className="font-bold text-base">{parseFloat(viewingIssue.total).toFixed(2)}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -467,14 +493,15 @@ export default function IssuesPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-2 min-w-[200px]">Product</th>
-                  <th className="text-left p-2 w-[100px]">Avail Qty</th>
-                  <th className="text-left p-2 w-[100px]">Quantity</th>
-                  <th className="text-left p-2 w-[100px]">Price</th>
-                  <th className="text-left p-2 w-[100px]">Freight</th>
-                  <th className="text-left p-2 w-[100px]">Total</th>
-                  <th className="text-left p-2 w-[100px]">Issue Price</th>
-                  <th className="text-left p-2 min-w-[120px]">Remark</th>
-                  <th className="p-2 w-[50px]"></th>
+                  <th className="text-left p-2 w-[90px]">HSN</th>
+                  <th className="text-right p-2 w-[70px]">GST %</th>
+                  <th className="text-left p-2 w-[90px]">Avail Qty</th>
+                  <th className="text-left p-2 w-[90px]">Quantity</th>
+                  <th className="text-left p-2 w-[90px]">Price</th>
+                  <th className="text-left p-2 w-[90px]">Freight</th>
+                  <th className="text-left p-2 w-[90px]">Total</th>
+                  <th className="text-left p-2 w-[90px]">Issue Price</th>
+                  <th className="p-2 w-[40px]"></th>
                 </tr>
               </thead>
               <tbody>
@@ -488,6 +515,16 @@ export default function IssuesPage() {
                         onAdd={(item) => setProducts((prev) => [...prev, item])}
                         compact
                       />
+                    </td>
+                    <td className="p-2">
+                      <Input value={line.hsn} className="h-9"
+                        onChange={(e) => handleDetailChange(index, "hsn", e.target.value)}
+                        placeholder="HSN" />
+                    </td>
+                    <td className="p-2">
+                      <Input type="number" value={line.gst} className="h-9 text-right"
+                        min={0} max={100} step={0.01}
+                        onChange={(e) => handleDetailChange(index, "gst", e.target.value ? parseFloat(e.target.value) : 0)} />
                     </td>
                     <td className="p-2">
                       <Input type="number" value={line.availableQty} readOnly className="bg-muted h-9" />
@@ -512,10 +549,6 @@ export default function IssuesPage() {
                         onChange={(e) => handleDetailChange(index, "issuePrice", e.target.value ? parseFloat(e.target.value) : "")} />
                     </td>
                     <td className="p-2">
-                      <Input value={line.remark} className="h-9"
-                        onChange={(e) => handleDetailChange(index, "remark", e.target.value)} />
-                    </td>
-                    <td className="p-2">
                       <Button variant="ghost" size="icon" className="h-9 w-9"
                         onClick={() => setDetails(details.filter((_, i) => i !== index))}
                         disabled={details.length <= 1}>
@@ -529,7 +562,20 @@ export default function IssuesPage() {
           </div>
 
           <div className="flex justify-end">
-            <div className="text-lg font-semibold">Grand Total: {calculateGrandTotal()}</div>
+            <div className="space-y-1 text-sm text-right min-w-[220px]">
+              <div className="flex justify-between gap-8">
+                <span className="text-muted-foreground">Sub Total:</span>
+                <span>{subTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-8">
+                <span className="text-muted-foreground">GST:</span>
+                <span>{gstTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-base font-semibold border-t pt-1">
+                <span>Grand Total:</span>
+                <span>{grandTotal.toFixed(2)}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

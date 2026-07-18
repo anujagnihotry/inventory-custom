@@ -269,6 +269,8 @@ model IssueDetail {
   total      Decimal @db.Decimal(18, 4)
   issuePrice Decimal @default(0) @db.Decimal(18, 4)
   remark     String? @db.Text
+  hsn        String? @db.VarChar(50)
+  gst        Decimal @default(0) @db.Decimal(5, 2)
 
   issue   Issue         @relation(fields: [issueId], references: [id], onDelete: Cascade)
   product ProductMaster @relation(fields: [productId], references: [id])

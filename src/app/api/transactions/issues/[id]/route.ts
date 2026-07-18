@@ -125,6 +125,8 @@ export async function PUT(
             total: detail.total?.toString() || "0",
             issuePrice: detail.issuePrice?.toString() || "0",
             remark: detail.remark || null,
+            hsn: detail.hsn || null,
+            gst: detail.gst || 0,
           },
         });
       }
