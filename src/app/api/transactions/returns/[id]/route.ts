@@ -126,6 +126,29 @@ export async function DELETE(
     const { id } = await params;
     const returnId = parseInt(id);
 
+    // Guard: block delete if stock added by this return has been re-issued
+    const returnStocks = await prisma.stock.findMany({
+      where: { transactionId: returnId },
+      select: { id: true },
+    });
+    const stockIds = returnStocks.map((s) => s.id);
+    if (stockIds.length > 0) {
+      const issuedRecords = await prisma.issueStockRecord.findMany({
+        where: { stockId: { in: stockIds } },
+        select: { issueId: true },
+      });
+      if (issuedRecords.length > 0) {
+        const issueIds = [...new Set(issuedRecords.map((r) => r.issueId))].sort((a, b) => a - b);
+        return NextResponse.json(
+          {
+            error: `This return is locked and cannot be deleted.\n\nItems from this return have been re-issued in Issue #${issueIds.join(", #")}.\n\nPlease delete those issues first.`,
+            locked: true,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       // Find the return details to remove stock entries
       const returnRecord = await tx.return.findUnique({

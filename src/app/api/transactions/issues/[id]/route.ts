@@ -44,6 +44,22 @@ export async function PUT(
     const body = await request.json();
     const { date, consigneeId, buyerId, total, vehicleNo, transport, freight, remark, jobNo, details } = body;
 
+    // Guard: block edit if returns have been recorded against this issue
+    const linkedReturns = await prisma.returnDetail.findMany({
+      where: { issueId },
+      select: { returnId: true },
+    });
+    if (linkedReturns.length > 0) {
+      const returnIds = [...new Set(linkedReturns.map((r) => r.returnId))].sort((a, b) => a - b);
+      return NextResponse.json(
+        {
+          error: `This issue is locked and cannot be edited.\n\nReturns have been recorded against it in Return #${returnIds.join(", #")}.\n\nPlease delete those returns first.`,
+          locked: true,
+        },
+        { status: 400 }
+      );
+    }
+
     await prisma.$transaction(async (tx) => {
       // 1. Restore stock from existing issue stock records
       const stockRecords = await tx.issueStockRecord.findMany({ where: { issueId } });
@@ -155,6 +171,22 @@ export async function DELETE(
   try {
     const { id } = await params;
     const issueId = parseInt(id);
+
+    // Guard: block delete if returns have been recorded against this issue
+    const linkedReturns = await prisma.returnDetail.findMany({
+      where: { issueId },
+      select: { returnId: true },
+    });
+    if (linkedReturns.length > 0) {
+      const returnIds = [...new Set(linkedReturns.map((r) => r.returnId))].sort((a, b) => a - b);
+      return NextResponse.json(
+        {
+          error: `This issue is locked and cannot be deleted.\n\nReturns have been recorded against it in Return #${returnIds.join(", #")}.\n\nPlease delete those returns first.`,
+          locked: true,
+        },
+        { status: 400 }
+      );
+    }
 
     await prisma.$transaction(async (tx) => {
       // Restore stock from issue stock records

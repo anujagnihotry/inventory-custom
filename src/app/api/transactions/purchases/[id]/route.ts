@@ -72,15 +72,18 @@ export async function PUT(
     });
     const stockIds = purchaseStocks.map((s) => s.id);
     if (stockIds.length > 0) {
-      const [issuedCount, scrappedCount] = await Promise.all([
-        prisma.issueStockRecord.count({ where: { stockId: { in: stockIds } } }),
-        prisma.scrapFromStock.count({ where: { stockId: { in: stockIds } } }),
+      const [issuedRecords, scrappedRecords] = await Promise.all([
+        prisma.issueStockRecord.findMany({ where: { stockId: { in: stockIds } }, select: { issueId: true } }),
+        prisma.scrapFromStock.findMany({ where: { stockId: { in: stockIds } }, select: { id: true } }),
       ]);
-      if (issuedCount > 0 || scrappedCount > 0) {
-        return NextResponse.json(
-          { error: "Cannot edit this purchase — some items have already been issued or scrapped. Please delete or edit the related transactions first." },
-          { status: 400 }
-        );
+      if (issuedRecords.length > 0 || scrappedRecords.length > 0) {
+        const issueIds = [...new Set(issuedRecords.map((r) => r.issueId))].sort((a, b) => a - b);
+        const scrapIds = [...new Set(scrappedRecords.map((r) => r.id))].sort((a, b) => a - b);
+        let msg = "This purchase is locked and cannot be edited.";
+        if (issueIds.length > 0) msg += `\n\nItems from this purchase have been issued in Issue #${issueIds.join(", #")}.`;
+        if (scrapIds.length > 0) msg += `\n\nItems have been scrapped (Scrap #${scrapIds.join(", #")}).`;
+        msg += "\n\nPlease delete or reverse those transactions first.";
+        return NextResponse.json({ error: msg, locked: true }, { status: 400 });
       }
     }
 

@@ -10,6 +10,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import { QuickCreateSelect } from "@/components/ui/quick-create-select";
 import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface Buyer {
   id: number;
@@ -66,6 +67,7 @@ export default function ReturnsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [lockMessage, setLockMessage] = useState<string | null>(null);
 
   // Dropdown data
   const [buyers, setBuyers] = useState<Buyer[]>([]);
@@ -212,6 +214,7 @@ export default function ReturnsPage() {
 
       if (!res.ok) {
         const err = await res.json();
+        if (err.locked) { setLockMessage(err.error); return; }
         throw new Error(err.error || "Failed to save return");
       }
 
@@ -235,11 +238,15 @@ export default function ReturnsPage() {
       const res = await fetch(`/api/transactions/returns/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete return");
+      if (!res.ok) {
+        const err = await res.json();
+        if (err.locked) { setLockMessage(err.error); return; }
+        throw new Error(err.error || "Failed to delete return");
+      }
       toast.success("Return deleted");
       fetchData();
-    } catch {
-      toast.error("Failed to delete return");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete return");
     } finally {
       setDeleting(null);
     }
@@ -532,6 +539,7 @@ export default function ReturnsPage() {
             </div>
           </div>
         </div>
+        <LockDialog message={lockMessage} onClose={() => setLockMessage(null)} />
       </div>
     );
   }
@@ -552,6 +560,23 @@ export default function ReturnsPage() {
       ) : (
         <DataTable columns={columns} data={data} />
       )}
+      <LockDialog message={lockMessage} onClose={() => setLockMessage(null)} />
     </div>
+  );
+}
+
+function LockDialog({ message, onClose }: { message: string | null; onClose: () => void }) {
+  return (
+    <Dialog open={!!message} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-destructive">Record Locked</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground whitespace-pre-line">{message}</p>
+        <DialogFooter>
+          <Button onClick={onClose}>OK</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

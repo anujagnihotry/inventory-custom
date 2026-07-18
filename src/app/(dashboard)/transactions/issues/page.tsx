@@ -10,6 +10,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Plus, Trash2, ArrowLeft, Save, Pencil, Eye } from "lucide-react";
 import { QuickCreateSelect } from "@/components/ui/quick-create-select";
 import { QuickCreateProductSelect } from "@/components/ui/quick-create-product-select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface Buyer { id: number; name: string; }
 interface Consignee { id: number; name: string; }
@@ -67,6 +68,7 @@ export default function IssuesPage() {
   const [data, setData] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [lockMessage, setLockMessage] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewingIssue, setViewingIssue] = useState<Issue | null>(null);
@@ -258,6 +260,7 @@ export default function IssuesPage() {
 
       if (!res.ok) {
         const err = await res.json();
+        if (err.locked) { setLockMessage(err.error); return; }
         throw new Error(err.error || "Failed to save issue");
       }
 
@@ -275,10 +278,14 @@ export default function IssuesPage() {
     try {
       setDeleting(id);
       const res = await fetch(`/api/transactions/issues/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = await res.json();
+        if (err.locked) { setLockMessage(err.error); return; }
+        throw new Error(err.error || "Failed to delete issue");
+      }
       toast.success("Issue deleted");
       fetchData();
-    } catch { toast.error("Failed to delete issue"); }
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Failed to delete issue"); }
     finally { setDeleting(null); }
   };
 
@@ -578,6 +585,7 @@ export default function IssuesPage() {
             </div>
           </div>
         </div>
+        <LockDialog message={lockMessage} onClose={() => setLockMessage(null)} />
       </div>
     );
   }
@@ -599,6 +607,23 @@ export default function IssuesPage() {
       ) : (
         <DataTable columns={columns} data={data} />
       )}
+      <LockDialog message={lockMessage} onClose={() => setLockMessage(null)} />
     </div>
+  );
+}
+
+function LockDialog({ message, onClose }: { message: string | null; onClose: () => void }) {
+  return (
+    <Dialog open={!!message} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-destructive">Record Locked</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground whitespace-pre-line">{message}</p>
+        <DialogFooter>
+          <Button onClick={onClose}>OK</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
