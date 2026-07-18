@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -101,7 +102,10 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wide py-3 px-4"
+                    className={cn(
+                      "text-xs font-semibold text-muted-foreground uppercase tracking-wide py-3 px-4",
+                      (header.column.columnDef.meta as { className?: string })?.className
+                    )}
                     onClick={header.column.getToggleSortingHandler()}
                     style={{ cursor: header.column.getCanSort() ? "pointer" : "default" }}
                   >
@@ -131,7 +135,13 @@ export function DataTable<TData, TValue>({
                   className={`border-b border-border/40 transition-colors hover:bg-indigo-50/40 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        "py-3 px-4 text-sm",
+                        (cell.column.columnDef.meta as { className?: string })?.className
+                      )}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

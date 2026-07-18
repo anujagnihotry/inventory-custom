@@ -108,6 +108,7 @@ export default function StockPage() {
     {
       accessorKey: "productName",
       header: "Product",
+      meta: { className: "whitespace-normal break-words max-w-xs" },
     },
     {
       accessorKey: "categoryName",
