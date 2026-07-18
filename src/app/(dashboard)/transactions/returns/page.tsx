@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/data-table/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Save, Search } from "lucide-react";
 import { QuickCreateSelect } from "@/components/ui/quick-create-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
@@ -326,12 +326,24 @@ export default function ReturnsPage() {
             </div>
             <div className="space-y-2">
               <Label>Job No</Label>
-              <Input
-                value={jobNo}
-                onChange={(e) => setJobNo(e.target.value)}
-                onBlur={fetchReturnableItems}
-                placeholder="Tab after entering to load items"
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={jobNo}
+                  onChange={(e) => setJobNo(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Tab") fetchReturnableItems(); }}
+                  placeholder="Enter job no then press Enter"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={fetchReturnableItems}
+                  disabled={loadingItems || !buyerId || !jobNo.trim()}
+                  title="Load items for this buyer + job no"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Vehicle No</Label>
