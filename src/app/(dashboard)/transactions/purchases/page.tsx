@@ -103,7 +103,7 @@ export default function PurchasesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [invoiceNo, setInvoiceNo] = useState("");
   const [supplierId, setSupplierId] = useState<number>(0);
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [vehicleNo, setVehicleNo] = useState("");
   const [transport, setTransport] = useState("");
   const [receivingDate, setReceivingDate] = useState("");
@@ -206,7 +206,7 @@ export default function PurchasesPage() {
     setEditingId(null);
     setInvoiceNo("");
     setSupplierId(0);
-    setDate("");
+    setDate(new Date().toISOString().split("T")[0]);
     setVehicleNo("");
     setTransport("");
     setReceivingDate("");

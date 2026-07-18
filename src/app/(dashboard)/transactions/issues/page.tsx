@@ -155,7 +155,7 @@ export default function IssuesPage() {
   const handleDetailChange = (index: number, field: keyof IssueDetailLine, value: string | number) => {
     const newDetails = [...details];
     (newDetails[index] as unknown as Record<string, unknown>)[field] = value;
-    recalcLineTotal(newDetails, index);
+    if (field !== "issuePrice") recalcLineTotal(newDetails, index);
     setDetails(newDetails);
   };
 
@@ -168,6 +168,7 @@ export default function IssuesPage() {
     lines[index].total = parseFloat(
       (qty * price * (1 + gstPct / 100) + freight).toFixed(2)
     );
+    lines[index].issuePrice = parseFloat((price + freight).toFixed(2));
   };
 
   const grandTotal = details.reduce((sum, d) => sum + (d.total || 0), 0);
