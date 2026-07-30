@@ -191,7 +191,8 @@ export default function LossesPage() {
               <QuickCreateSelect
                 label="Buyer"
                 createUrl="/api/masters/buyers"
-                options={buyers}
+                contactFields
+options={buyers}
                 value={buyerId}
                 onChange={(id) => setBuyerId(id)}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}

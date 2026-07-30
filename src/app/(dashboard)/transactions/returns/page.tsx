@@ -318,7 +318,8 @@ export default function ReturnsPage() {
                 onChange={(id) => { setBuyerId(id); setDetails([emptyDetail()]); }}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}
                 createUrl="/api/masters/buyers"
-              />
+              contactFields
+/>
             </div>
             <div className="space-y-2">
               <Label>Return Date *</Label>

@@ -288,7 +288,8 @@ export default function RepairsPage() {
               <QuickCreateSelect
                 label="Consignee *"
                 createUrl="/api/masters/consignees"
-                options={consignees}
+                contactFields
+options={consignees}
                 value={consigneeId}
                 onChange={(val) => setConsigneeId(val ? parseInt(String(val)) : "")}
                 onAdd={(item) => setConsignees((prev) => [...prev, item])}
@@ -298,7 +299,8 @@ export default function RepairsPage() {
               <QuickCreateSelect
                 label="Supplier *"
                 createUrl="/api/masters/suppliers"
-                options={suppliers}
+                contactFields
+options={suppliers}
                 value={supplierId}
                 onChange={(val) => setSupplierId(val ? parseInt(String(val)) : "")}
                 onAdd={(item) => setSuppliers((prev) => [...prev, item])}

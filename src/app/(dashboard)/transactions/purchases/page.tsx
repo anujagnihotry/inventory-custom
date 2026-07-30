@@ -589,7 +589,8 @@ export default function PurchasesPage() {
               options={suppliers}
               onAdd={(item) => setSuppliers((prev) => [...prev, item])}
               createUrl="/api/masters/suppliers"
-              placeholder="Select Supplier"
+              contactFields
+placeholder="Select Supplier"
             />
           </div>
 

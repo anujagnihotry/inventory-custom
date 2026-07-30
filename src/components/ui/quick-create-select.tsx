@@ -19,6 +19,24 @@ export interface QCOption {
   name: string;
 }
 
+interface ContactFields {
+  phoneNo: string;
+  address: string;
+  city: string;
+  province: string;
+  pincode: string;
+  gst: string;
+}
+
+const emptyContact: ContactFields = {
+  phoneNo: "",
+  address: "",
+  city: "",
+  province: "",
+  pincode: "",
+  gst: "",
+};
+
 interface QuickCreateSelectProps {
   label: string;
   value: number | string;
@@ -29,7 +47,9 @@ interface QuickCreateSelectProps {
   placeholder?: string;
   required?: boolean;
   selectClassName?: string;
-  compact?: boolean; // smaller height for table cells
+  compact?: boolean;
+  /** Show full contact fields (name, phone, address, city, province, pincode, gst) — for buyer/supplier/consignee */
+  contactFields?: boolean;
 }
 
 export function QuickCreateSelect({
@@ -43,20 +63,33 @@ export function QuickCreateSelect({
   required,
   selectClassName,
   compact = false,
+  contactFields = false,
 }: QuickCreateSelectProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [contact, setContact] = useState<ContactFields>(emptyContact);
   const [saving, setSaving] = useState(false);
+
+  const setField = (field: keyof ContactFields, val: string) =>
+    setContact((prev) => ({ ...prev, [field]: val }));
+
+  const resetForm = () => {
+    setName("");
+    setContact(emptyContact);
+  };
 
   const handleCreate = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
     setSaving(true);
     try {
+      const body = contactFields
+        ? { name: trimmed, ...contact }
+        : { name: trimmed };
       const res = await fetch(createUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -67,7 +100,7 @@ export function QuickCreateSelect({
       onAdd(newItem);
       onChange(created.id);
       setOpen(false);
-      setName("");
+      resetForm();
       toast.success(`${label} created`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : `Failed to create ${label}`);
@@ -102,7 +135,9 @@ export function QuickCreateSelect({
           type="button"
           variant="outline"
           size="icon"
-          className={cn(`${btnH} shrink-0 border-dashed hover:border-indigo-400 hover:text-indigo-600`)}
+          className={cn(
+            `${btnH} shrink-0 border-dashed hover:border-indigo-400 hover:text-indigo-600`
+          )}
           onClick={() => setOpen(true)}
           title={`Add new ${label}`}
         >
@@ -114,37 +149,106 @@ export function QuickCreateSelect({
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
-          if (!v) setName("");
+          if (!v) resetForm();
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent className={contactFields ? "max-w-lg" : "max-w-sm"}>
           <DialogHeader>
             <DialogTitle>New {label}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-1">
-            <div className="space-y-1.5">
-              <Label htmlFor="qc-name">Name *</Label>
-              <Input
-                id="qc-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleCreate();
-                  }
-                }}
-                placeholder={`Enter ${label.toLowerCase()} name...`}
-                autoFocus
-              />
-            </div>
+            {contactFields ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="qc-name">Name *</Label>
+                  <Input
+                    id="qc-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={`Enter ${label.toLowerCase()} name...`}
+                    autoFocus
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="qc-phone">Phone No</Label>
+                  <Input
+                    id="qc-phone"
+                    value={contact.phoneNo}
+                    onChange={(e) => setField("phoneNo", e.target.value)}
+                    placeholder="Phone number"
+                  />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label htmlFor="qc-address">Address</Label>
+                  <Input
+                    id="qc-address"
+                    value={contact.address}
+                    onChange={(e) => setField("address", e.target.value)}
+                    placeholder="Street address"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="qc-city">City</Label>
+                  <Input
+                    id="qc-city"
+                    value={contact.city}
+                    onChange={(e) => setField("city", e.target.value)}
+                    placeholder="City"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="qc-province">Province</Label>
+                  <Input
+                    id="qc-province"
+                    value={contact.province}
+                    onChange={(e) => setField("province", e.target.value)}
+                    placeholder="Province / State"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="qc-pincode">Pincode</Label>
+                  <Input
+                    id="qc-pincode"
+                    value={contact.pincode}
+                    onChange={(e) => setField("pincode", e.target.value)}
+                    placeholder="Pincode"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="qc-gst">GST</Label>
+                  <Input
+                    id="qc-gst"
+                    value={contact.gst}
+                    onChange={(e) => setField("gst", e.target.value)}
+                    placeholder="GST number"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="qc-name">Name *</Label>
+                <Input
+                  id="qc-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreate();
+                    }
+                  }}
+                  placeholder={`Enter ${label.toLowerCase()} name...`}
+                  autoFocus
+                />
+              </div>
+            )}
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
                   setOpen(false);
-                  setName("");
+                  resetForm();
                 }}
               >
                 Cancel

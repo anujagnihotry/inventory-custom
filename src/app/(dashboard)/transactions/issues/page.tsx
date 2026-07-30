@@ -451,7 +451,8 @@ export default function IssuesPage() {
                 options={consignees}
                 onAdd={(item) => setConsignees((prev) => [...prev, item])}
                 createUrl="/api/masters/consignees"
-              />
+              contactFields
+/>
             </div>
             <div className="space-y-2">
               <Label>Buyer *</Label>
@@ -462,7 +463,8 @@ export default function IssuesPage() {
                 options={buyers}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}
                 createUrl="/api/masters/buyers"
-              />
+              contactFields
+/>
             </div>
             <div className="space-y-2">
               <Label>Job No</Label>

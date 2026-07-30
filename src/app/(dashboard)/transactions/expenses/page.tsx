@@ -307,7 +307,8 @@ export default function ExpensesPage() {
               <QuickCreateSelect
                 label="Buyer"
                 createUrl="/api/masters/buyers"
-                options={buyers}
+                contactFields
+options={buyers}
                 value={buyerId}
                 onChange={(val) => setBuyerId(val ? parseInt(String(val)) : "")}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}

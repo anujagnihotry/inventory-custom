@@ -283,7 +283,8 @@ export default function PurchaseChallansPage() {
               <QuickCreateSelect
                 label="Supplier *"
                 createUrl="/api/masters/suppliers"
-                options={suppliers}
+                contactFields
+options={suppliers}
                 value={supplierId}
                 onChange={(val) => setSupplierId(val ? parseInt(String(val)) : "")}
                 onAdd={(item) => setSuppliers((prev) => [...prev, item])}

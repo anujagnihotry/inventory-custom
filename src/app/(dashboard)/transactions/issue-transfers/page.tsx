@@ -295,7 +295,8 @@ export default function IssueTransfersPage() {
               <QuickCreateSelect
                 label="Consignee *"
                 createUrl="/api/masters/consignees"
-                options={consignees}
+                contactFields
+options={consignees}
                 value={consigneeId}
                 onChange={(id) => setConsigneeId(id)}
                 onAdd={(item) => setConsignees((prev) => [...prev, item])}
@@ -305,7 +306,8 @@ export default function IssueTransfersPage() {
               <QuickCreateSelect
                 label="Buyer *"
                 createUrl="/api/masters/buyers"
-                options={buyers}
+                contactFields
+options={buyers}
                 value={buyerId}
                 onChange={(id) => setBuyerId(id)}
                 onAdd={(item) => setBuyers((prev) => [...prev, item])}
