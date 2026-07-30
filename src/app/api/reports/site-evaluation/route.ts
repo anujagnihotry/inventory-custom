@@ -62,10 +62,14 @@ export async function GET(request: NextRequest) {
       Number(returnableIssues._sum.total ?? 0) +
       Number(returnableExpense._sum.amount ?? 0);
 
-    // ── 3. Other Expenses (Expences) — one row per expense type ───────────────
+    // ── 3. Other Expenses (Expences) — one row per expense type marked for site eval ──
     const otherExpenses = await prisma.expenseManager.groupBy({
       by: ["expenseTypeId"],
-      where: { ...expWhere, expenseTypeId: { notIn: ET_EXCLUDED } },
+      where: {
+        ...expWhere,
+        expenseTypeId: { notIn: ET_EXCLUDED },
+        expenseType: { includeInSiteEvaluation: true },
+      },
       _sum: { amount: true },
     });
     const expenseTypes = await prisma.expenseType.findMany({

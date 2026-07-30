@@ -35,7 +35,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name } = body;
+    const { name, includeInSiteEvaluation } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -46,7 +46,10 @@ export async function PUT(
 
     const expenseType = await prisma.expenseType.update({
       where: { id: parseInt(id) },
-      data: { name },
+      data: {
+        name,
+        ...(includeInSiteEvaluation !== undefined && { includeInSiteEvaluation }),
+      },
     });
 
     return NextResponse.json(expenseType);

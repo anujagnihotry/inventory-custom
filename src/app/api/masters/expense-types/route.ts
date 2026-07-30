@@ -35,8 +35,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { includeInSiteEvaluation } = body;
+
     const expenseType = await prisma.expenseType.create({
-      data: { name },
+      data: { name, includeInSiteEvaluation: includeInSiteEvaluation ?? false },
     });
 
     return NextResponse.json(expenseType, { status: 201 });
