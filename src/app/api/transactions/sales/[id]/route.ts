@@ -45,36 +45,10 @@ export async function PUT(
     const { date, consigneeId, buyerId, total, roundOff, vehicleNo, transport, freight, remark, jobNo, details } = body;
 
     await prisma.$transaction(async (tx) => {
-      // 1. Restore stock from existing sale stock records
-      const stockRecords = await tx.saleStockRecord.findMany({ where: { saleId } });
-      for (const record of stockRecords) {
-        await tx.stock.update({
-          where: { id: record.stockId },
-          data: { quantity: { increment: Number(record.quantity) } },
-        });
-      }
-
-      // 2. Validate new quantities against restored stock
-      for (const detail of details) {
-        const available = await tx.stock.aggregate({
-          where: { productId: parseInt(String(detail.productId)), quantity: { gt: 0 } },
-          _sum: { quantity: true },
-        });
-        const availableQty = Number(available._sum.quantity ?? 0);
-        if (Number(detail.quantity) > availableQty) {
-          const product = await tx.productMaster.findUnique({
-            where: { id: parseInt(String(detail.productId)) },
-            select: { name: true },
-          });
-          throw new Error(`Insufficient stock for "${product?.name ?? "product"}". Available: ${availableQty}, Requested: ${detail.quantity}`);
-        }
-      }
-
-      // 3. Delete existing details and stock records
-      await tx.saleStockRecord.deleteMany({ where: { saleId } });
+      // Delete existing details
       await tx.saleDetail.deleteMany({ where: { saleId } });
 
-      // 4. Update the sale header
+      // Update the sale header
       await tx.sale.update({
         where: { id: saleId },
         data: {
@@ -91,29 +65,10 @@ export async function PUT(
         },
       });
 
-      // 5. Re-create details with new stock deductions
+      // Re-create details
       for (const detail of details) {
         const productId = parseInt(detail.productId);
         const qty = parseFloat(detail.quantity);
-
-        const stocks = await tx.stock.findMany({
-          where: { productId, quantity: { gt: 0 } },
-          orderBy: { id: "asc" },
-        });
-
-        let remaining = qty;
-        for (const stock of stocks) {
-          if (remaining <= 0) break;
-          const deduct = Math.min(remaining, Number(stock.quantity));
-          await tx.stock.update({
-            where: { id: stock.id },
-            data: { quantity: { decrement: deduct } },
-          });
-          await tx.saleStockRecord.create({
-            data: { saleId, stockId: stock.id, quantity: deduct.toString() },
-          });
-          remaining -= deduct;
-        }
 
         await tx.saleDetail.create({
           data: {
@@ -156,19 +111,7 @@ export async function DELETE(
     const { id } = await params;
     const saleId = parseInt(id);
 
-    await prisma.$transaction(async (tx) => {
-      // Restore stock from sale stock records
-      const stockRecords = await tx.saleStockRecord.findMany({ where: { saleId } });
-      for (const record of stockRecords) {
-        await tx.stock.update({
-          where: { id: record.stockId },
-          data: { quantity: { increment: Number(record.quantity) } },
-        });
-      }
-
-      // Delete the sale (cascade deletes details and stock records)
-      await tx.sale.delete({ where: { id: saleId } });
-    });
+    await prisma.sale.delete({ where: { id: saleId } });
 
     return NextResponse.json({ message: "Sale deleted successfully" });
   } catch (error) {

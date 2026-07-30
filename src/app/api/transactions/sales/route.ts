@@ -45,25 +45,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Negative stock validation
-    for (const detail of details) {
-      const available = await prisma.stock.aggregate({
-        where: { productId: parseInt(String(detail.productId)), quantity: { gt: 0 } },
-        _sum: { quantity: true },
-      });
-      const availableQty = Number(available._sum.quantity ?? 0);
-      if (Number(detail.quantity) > availableQty) {
-        const product = await prisma.productMaster.findUnique({
-          where: { id: parseInt(String(detail.productId)) },
-          select: { name: true },
-        });
-        return NextResponse.json(
-          { error: `Insufficient stock for "${product?.name ?? "product"}". Available: ${availableQty}, Requested: ${detail.quantity}` },
-          { status: 400 }
-        );
-      }
-    }
-
     const result = await prisma.$transaction(async (tx) => {
       const sale = await tx.sale.create({
         data: {
@@ -105,29 +86,6 @@ export async function POST(request: NextRequest) {
         },
         include: { details: true },
       });
-
-      // Deduct from stock using FIFO
-      for (const detail of sale.details) {
-        let remaining = Number(detail.quantity);
-
-        const stocks = await tx.stock.findMany({
-          where: { productId: detail.productId, quantity: { gt: 0 } },
-          orderBy: { addedDate: "asc" },
-        });
-
-        for (const stock of stocks) {
-          if (remaining <= 0) break;
-          const deductQty = Math.min(remaining, Number(stock.quantity));
-          await tx.stock.update({
-            where: { id: stock.id },
-            data: { quantity: { decrement: deductQty } },
-          });
-          await tx.saleStockRecord.create({
-            data: { saleId: sale.id, stockId: stock.id, quantity: deductQty },
-          });
-          remaining -= deductQty;
-        }
-      }
 
       return sale;
     });
