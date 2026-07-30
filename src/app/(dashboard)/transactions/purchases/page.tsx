@@ -161,6 +161,7 @@ export default function PurchasesPage() {
     return sum + qty * price * gstPct / 100;
   }, 0);
   const netAmount = subTotal + gstAmount; // same as grandTotal
+  const roundOff = parseFloat((Math.round(netAmount) - netAmount).toFixed(2));
 
   // ─── Line item helpers ────────────────────────────────────────────────────
 
@@ -291,6 +292,7 @@ export default function PurchasesPage() {
         total: subTotal,
         gst: gstAmount,
         netAmount,
+        roundOff,
         vehicleNo,
         transport,
         receivingDate: receivingDate || null,
@@ -772,9 +774,21 @@ placeholder="Select Supplier"
               </span>
             </div>
             <div className="flex items-center justify-between border-t pt-3">
-              <span className="text-base font-bold">Net Amount:</span>
-              <span className="text-base font-bold">
+              <span className="text-base font-semibold">Net Amount:</span>
+              <span className="text-base font-semibold">
                 {netAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Round Off:</span>
+              <span className="text-sm text-muted-foreground">
+                {roundOff >= 0 ? "+" : ""}{roundOff.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-t pt-3">
+              <span className="text-base font-bold">Total Payable:</span>
+              <span className="text-base font-bold text-indigo-600">
+                {(netAmount + roundOff).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </span>
             </div>
           </div>

@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { invoiceNo, buyerId, vehicleNo, transport, freight, receiveDate, total, jobNo, details } = body;
+    const { invoiceNo, buyerId, vehicleNo, transport, freight, receiveDate, total, roundOff, jobNo, details } = body;
 
     if (!buyerId || !receiveDate || !details?.length) {
       return NextResponse.json(
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
         freight: Number(freight) || 0,
         receiveDate: new Date(receiveDate),
         total: Number(total) || 0,
+        roundOff: Number(roundOff) || 0,
         jobNo: jobNo || null,
         details: {
           create: details.map(

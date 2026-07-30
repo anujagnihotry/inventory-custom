@@ -163,6 +163,7 @@ export default function ReturnRepairsPage() {
           freight: headerFreight || 0,
           receiveDate,
           total: grandTotal,
+          roundOff: roundOff.toFixed(2),
           jobNo,
           details: validDetails,
         }),
@@ -455,9 +456,20 @@ options={buyers}
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end">
-            <div className="text-lg font-semibold">
-              Grand Total: {grandTotal}
+                    <div className="flex justify-end">
+            <div className="space-y-1 text-sm text-right min-w-[220px]">
+              <div className="flex justify-between gap-8 text-base font-semibold">
+                <span>Grand Total:</span>
+                <span>{grandTotal}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-muted-foreground">
+                <span>Round Off:</span>
+                <span>{roundOff >= 0 ? "+" : ""}{roundOff.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-base font-bold border-t pt-1 text-indigo-600">
+                <span>Total Payable:</span>
+                <span>{(parseFloat(grandTotal) + roundOff).toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>

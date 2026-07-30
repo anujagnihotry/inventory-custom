@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { challanNo, date, supplierId, total, gst, details } = body;
+    const { challanNo, date, supplierId, total, gst, netAmount, roundOff, details } = body;
 
     if (!challanNo || !date || !supplierId || !details?.length) {
       return NextResponse.json(
@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
         supplierId: Number(supplierId),
         total: Number(total) || 0,
         gst: Number(gst) || 0,
+        netAmount: Number(netAmount) || 0,
+        roundOff: Number(roundOff) || 0,
         details: {
           create: details.map(
             (d: { productId: number; description?: string; hsn?: string; quantity: number; price: number; freight?: number; total: number }) => ({

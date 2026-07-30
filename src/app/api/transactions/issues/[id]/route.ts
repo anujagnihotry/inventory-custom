@@ -42,7 +42,7 @@ export async function PUT(
     const { id } = await params;
     const issueId = parseInt(id);
     const body = await request.json();
-    const { date, consigneeId, buyerId, total, vehicleNo, transport, freight, remark, jobNo, details } = body;
+    const { date, consigneeId, buyerId, total, roundOff, vehicleNo, transport, freight, remark, jobNo, details } = body;
 
     // Guard: block edit if returns have been recorded against this issue
     const linkedReturns = await prisma.returnDetail.findMany({
@@ -98,6 +98,7 @@ export async function PUT(
           consigneeId: parseInt(consigneeId),
           buyerId: parseInt(buyerId),
           total: total.toString(),
+          roundOff: parseFloat(roundOff) || 0,
           vehicleNo: vehicleNo || null,
           transport: transport || null,
           freight: freight?.toString() || "0",

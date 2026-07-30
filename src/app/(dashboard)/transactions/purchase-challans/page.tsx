@@ -133,6 +133,10 @@ export default function PurchaseChallansPage() {
   const grandTotal = details
     .reduce((sum, d) => sum + (d.total || 0), 0)
     .toFixed(2);
+  const subTotalNum = parseFloat(grandTotal);
+  const gstNum = parseFloat(String(gst)) || 0;
+  const netAmountNum = subTotalNum + gstNum;
+  const roundOff = parseFloat((Math.round(netAmountNum) - netAmountNum).toFixed(2));
 
   const handleSave = async () => {
     if (!challanNo.trim() || !supplierId || !date) {
@@ -156,6 +160,8 @@ export default function PurchaseChallansPage() {
           supplierId,
           total: grandTotal,
           gst: gst || 0,
+          netAmount: netAmountNum,
+          roundOff: roundOff.toFixed(2),
           details: validDetails,
         }),
       });
@@ -445,9 +451,20 @@ options={suppliers}
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end">
-            <div className="text-lg font-semibold">
-              Grand Total: {grandTotal}
+                    <div className="flex justify-end">
+            <div className="space-y-1 text-sm text-right min-w-[220px]">
+              <div className="flex justify-between gap-8 text-base font-semibold">
+                <span>Grand Total:</span>
+                <span>{grandTotal}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-muted-foreground">
+                <span>Round Off:</span>
+                <span>{roundOff >= 0 ? "+" : ""}{roundOff.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-base font-bold border-t pt-1 text-indigo-600">
+                <span>Total Payable:</span>
+                <span>{(parseFloat(grandTotal) + roundOff).toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>

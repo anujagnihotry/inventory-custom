@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { date, consigneeId, buyerId, total, vehicleNo, transport, freight, remark, jobNo, details } = body;
+    const { date, consigneeId, buyerId, total, roundOff, vehicleNo, transport, freight, remark, jobNo, details } = body;
 
     if (!date || !consigneeId || !buyerId || !details?.length) {
       return NextResponse.json(
@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
         consigneeId: Number(consigneeId),
         buyerId: Number(buyerId),
         total: Number(total) || 0,
+        roundOff: Number(roundOff) || 0,
         vehicleNo: vehicleNo || null,
         transport: transport || null,
         freight: Number(freight) || 0,

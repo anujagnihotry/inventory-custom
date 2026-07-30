@@ -44,7 +44,7 @@ export async function PUT(
     const { id } = await params;
     const returnId = parseInt(id);
     const body = await request.json();
-    const { invoiceNo, buyerId, returnDate, total, vehicleNo, transport, freight, jobNo, remark, details } = body;
+    const { invoiceNo, buyerId, returnDate, total, roundOff, vehicleNo, transport, freight, jobNo, remark, details } = body;
 
     if (!buyerId || !returnDate || !details?.length) {
       return NextResponse.json(
@@ -68,6 +68,7 @@ export async function PUT(
           buyerId: parseInt(buyerId),
           returnDate: new Date(returnDate),
           total: parseFloat(total) || 0,
+          roundOff: parseFloat(roundOff) || 0,
           vehicleNo: vehicleNo || null,
           transport: transport || null,
           freight: parseFloat(freight) || 0,

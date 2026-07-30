@@ -179,6 +179,7 @@ export default function IssuesPage() {
     return sum + qty * price + freight;
   }, 0);
   const gstTotal = grandTotal - subTotal;
+  const roundOff = parseFloat((Math.round(grandTotal) - grandTotal).toFixed(2));
 
   const handleView = async (id: number) => {
     try {
@@ -248,7 +249,7 @@ export default function IssuesPage() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date, consigneeId, buyerId, total: grandTotal.toFixed(2),
+          date, consigneeId, buyerId, total: grandTotal.toFixed(2), roundOff: roundOff.toFixed(2),
           vehicleNo, transport, freight: freight || 0, remark, jobNo,
           details: validDetails.map((d) => ({
             productId: d.productId, quantity: d.quantity,
@@ -584,6 +585,14 @@ export default function IssuesPage() {
               <div className="flex justify-between gap-8 text-base font-semibold border-t pt-1">
                 <span>Grand Total:</span>
                 <span>{grandTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-sm text-muted-foreground">
+                <span>Round Off:</span>
+                <span>{roundOff >= 0 ? "+" : ""}{roundOff.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-base font-bold border-t pt-1 text-indigo-600">
+                <span>Total Payable:</span>
+                <span>{(grandTotal + roundOff).toFixed(2)}</span>
               </div>
             </div>
           </div>

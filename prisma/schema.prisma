@@ -167,6 +167,7 @@ model Purchase {
   total      Decimal  @db.Decimal(18, 4)
   gst        Decimal  @default(0) @db.Decimal(18, 4)
   netAmount  Decimal  @default(0) @db.Decimal(18, 4)
+  roundOff   Decimal  @default(0) @db.Decimal(18, 4)
   vehicleNo      String?   @db.VarChar(20)
   transport      String?   @db.VarChar(300)
   receivingDate  DateTime? @db.Date
@@ -202,6 +203,8 @@ model PurchaseChallan {
   supplierId Int
   total      Decimal  @db.Decimal(18, 4)
   gst        Decimal  @default(0) @db.Decimal(18, 4)
+  netAmount  Decimal  @default(0) @db.Decimal(18, 4)
+  roundOff   Decimal  @default(0) @db.Decimal(18, 4)
   createdAt  DateTime @default(now())
 
   supplier Supplier                @relation(fields: [supplierId], references: [id])
@@ -244,6 +247,7 @@ model Issue {
   consigneeId Int
   buyerId     Int
   total       Decimal  @db.Decimal(18, 4)
+  roundOff    Decimal  @default(0) @db.Decimal(18, 4)
   vehicleNo   String?  @db.VarChar(20)
   transport   String?  @db.VarChar(300)
   freight     Decimal  @default(0) @db.Decimal(18, 4)
@@ -292,6 +296,7 @@ model IssueTransfer {
   consigneeId Int
   buyerId     Int
   total       Decimal  @db.Decimal(18, 4)
+  roundOff    Decimal  @default(0) @db.Decimal(18, 4)
   vehicleNo   String?  @db.VarChar(20)
   transport   String?  @db.VarChar(300)
   freight     Decimal  @default(0) @db.Decimal(18, 4)
@@ -354,6 +359,7 @@ model Return {
   freight    Decimal  @default(0) @db.Decimal(18, 4)
   returnDate DateTime @db.Date
   total      Decimal  @db.Decimal(18, 4)
+  roundOff   Decimal  @default(0) @db.Decimal(18, 4)
   jobNo      String?  @db.VarChar(50)
   remark     String?  @db.Text
   createdAt  DateTime @default(now())
@@ -387,6 +393,7 @@ model ReturnRepair {
   freight     Decimal  @default(0) @db.Decimal(18, 4)
   receiveDate DateTime @db.Date
   total       Decimal  @db.Decimal(18, 4)
+  roundOff    Decimal  @default(0) @db.Decimal(18, 4)
   jobNo       String?  @db.VarChar(50)
   createdAt   DateTime @default(now())
 
