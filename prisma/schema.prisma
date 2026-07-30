@@ -141,6 +141,7 @@ model ExpenseType {
   id                      Int              @id @default(autoincrement())
   name                    String           @db.VarChar(300)
   includeInSiteEvaluation Boolean          @default(false)
+  siteEvaluationRole      String?          @db.VarChar(50)
   expenses                ExpenseManager[]
 }
 
