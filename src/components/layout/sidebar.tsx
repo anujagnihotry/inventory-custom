@@ -33,6 +33,7 @@ import {
   Layers,
   Ruler,
   Tag,
+  Receipt,
 } from "lucide-react";
 
 interface NavItem {
@@ -67,6 +68,7 @@ const navSections: NavSection[] = [
       { label: "Purchases", href: "/transactions/purchases", icon: ShoppingCart },
       { label: "Purchase Challans", href: "/transactions/purchase-challans", icon: FileText },
       { label: "Issues", href: "/transactions/issues", icon: ClipboardList },
+      { label: "Sales", href: "/transactions/sales", icon: Receipt },
       { label: "Order Issues", href: "/transactions/order-issues", icon: Layers },
       { label: "Returns", href: "/transactions/returns", icon: RotateCcw },
       { label: "Return Repairs", href: "/transactions/return-repairs", icon: Wrench },

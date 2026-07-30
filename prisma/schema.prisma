@@ -67,6 +67,7 @@ model ProductMaster {
   purchaseChallanDetails PurchaseChallanDetail[]
   stocks                 Stock[]
   issueDetails           IssueDetail[]
+  saleDetails            SaleDetail[]
   issueTransferDetails   IssueTransferDetail[]
   orderIssueDetails      OrderIssueDetail[]
   returnDetails          ReturnDetail[]
@@ -90,6 +91,7 @@ model Buyer {
   gst        String? @db.VarChar(50)
 
   issues          Issue[]
+  sales           Sale[]
   issueTransfers  IssueTransfer[]
   orderIssues     OrderIssue[]
   returns         Return[]
@@ -111,6 +113,7 @@ model Consignee {
   gst        String? @db.VarChar(50)
 
   issues           Issue[]
+  sales            Sale[]
   issueTransfers   IssueTransfer[]
   orderIssues      OrderIssue[]
   transports       Transport[]
@@ -238,6 +241,7 @@ model Stock {
   purchase          Purchase?          @relation(fields: [purchaseId], references: [id])
   product           ProductMaster      @relation(fields: [productId], references: [id])
   issueStockRecords IssueStockRecord[]
+  saleStockRecords  SaleStockRecord[]
   scrapFromStocks   ScrapFromStock[]
 }
 
@@ -551,4 +555,51 @@ model Logging {
   errorText String?  @db.Text
   query     String?  @db.Text
   timestamp DateTime @default(now())
+}
+
+model Sale {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.Date
+  consigneeId Int
+  buyerId     Int
+  total       Decimal  @db.Decimal(18, 4)
+  roundOff    Decimal  @default(0) @db.Decimal(18, 4)
+  vehicleNo   String?  @db.VarChar(20)
+  transport   String?  @db.VarChar(300)
+  freight     Decimal  @default(0) @db.Decimal(18, 4)
+  remark      String?  @db.Text
+  jobNo       String?  @db.VarChar(50)
+  createdAt   DateTime @default(now())
+
+  consignee    Consignee         @relation(fields: [consigneeId], references: [id])
+  buyer        Buyer             @relation(fields: [buyerId], references: [id])
+  details      SaleDetail[]
+  stockRecords SaleStockRecord[]
+}
+
+model SaleDetail {
+  id        Int     @id @default(autoincrement())
+  saleId    Int
+  productId Int
+  quantity  Decimal @db.Decimal(18, 4)
+  price     Decimal @db.Decimal(18, 4)
+  freight   Decimal @default(0) @db.Decimal(18, 4)
+  total     Decimal @db.Decimal(18, 4)
+  salePrice Decimal @default(0) @db.Decimal(18, 4)
+  remark    String? @db.Text
+  hsn       String? @db.VarChar(50)
+  gst       Decimal @default(0) @db.Decimal(5, 2)
+
+  sale    Sale          @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product ProductMaster @relation(fields: [productId], references: [id])
+}
+
+model SaleStockRecord {
+  id       Int     @id @default(autoincrement())
+  saleId   Int
+  stockId  Int
+  quantity Decimal @db.Decimal(18, 4)
+
+  sale  Sale  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  stock Stock @relation(fields: [stockId], references: [id])
 }
