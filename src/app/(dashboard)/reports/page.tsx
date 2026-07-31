@@ -1222,7 +1222,7 @@ export default function ReportsPage() {
                   </p>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
-                  <p className="text-sm text-muted-foreground">Net (Exp + Ret)</p>
+                  <p className="text-sm text-muted-foreground">Net (Exp - Ret)</p>
                   <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">
                     {fmt(siteEvalSummary.grandTotal)}
                   </p>
@@ -1239,7 +1239,7 @@ export default function ReportsPage() {
                 <p className={`text-3xl font-bold mt-1 ${siteEvalSummary.plTotal >= 0 ? "text-green-600" : "text-red-600"}`}>
                   {siteEvalSummary.plTotal >= 0 ? "" : "-"}{fmt(Math.abs(siteEvalSummary.plTotal))}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">Net (Exp + Ret) − Total Sales</p>
+                <p className="text-xs text-muted-foreground mt-1">Net (Exp - Ret) − Total Sales</p>
               </div>
             </CardContent>
           </Card>
