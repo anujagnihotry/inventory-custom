@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       include: {
         details: {
           include: {
-            product: { select: { id: true, name: true } },
+            product: { select: { id: true, name: true, unitId: true } },
           },
         },
       },
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
             issueDetailId: detail.id,
             productId: detail.productId,
             productName: detail.product.name,
+            unitId: detail.product.unitId,
             hsn: detail.hsn || "",
             gst: Number(detail.gst) || 0,
             issuedQty: Number(detail.quantity),

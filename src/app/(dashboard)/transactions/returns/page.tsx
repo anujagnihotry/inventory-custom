@@ -139,12 +139,12 @@ export default function ReturnsPage() {
       setDetails(
         items.map((item: {
           issueId: number; issueDetailId: number; productId: number; productName: string;
-          hsn: string; gst: number; remaining: number; issuePrice: number;
+          unitId: number | null; hsn: string; gst: number; remaining: number; issuePrice: number;
         }) => ({
           checked: true,
           productId: item.productId,
           productName: item.productName,
-          unitId: "",
+          unitId: item.unitId ?? "",
           hsn: item.hsn,
           gst: item.gst,
           maxReturnQty: item.remaining,
