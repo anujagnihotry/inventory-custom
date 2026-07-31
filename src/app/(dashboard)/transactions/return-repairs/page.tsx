@@ -137,6 +137,8 @@ export default function ReturnRepairsPage() {
     }, 0)
     .toFixed(2);
 
+  const roundOff = parseFloat((Math.round(parseFloat(grandTotal)) - parseFloat(grandTotal)).toFixed(2));
+
   const handleSave = async () => {
     if (!buyerId || !receiveDate) {
       toast.error("Buyer and date are required");
