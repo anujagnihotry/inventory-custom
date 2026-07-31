@@ -269,6 +269,8 @@ export default function ReportsPage() {
     expencesTotal: 0,
     returnsTotal: 0,
     grandTotal: 0,
+    salesTotal: 0,
+    plTotal: 0,
   });
 
   const [loading, setLoading] = useState(false);
@@ -453,7 +455,7 @@ export default function ReportsPage() {
       const json = await res.json();
       setSiteEvalData(json.rows || []);
       setSiteEvalSummary(
-        json.summary || { expencesTotal: 0, returnsTotal: 0, grandTotal: 0 }
+        json.summary || { expencesTotal: 0, returnsTotal: 0, grandTotal: 0, salesTotal: 0, plTotal: 0 }
       );
     } catch {
       toast.error("Failed to load site evaluation");
@@ -1205,8 +1207,8 @@ export default function ReportsPage() {
             <CardHeader>
               <CardTitle>Summary</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 rounded-lg bg-blue-50 dark:bg-blue-950">
                   <p className="text-sm text-muted-foreground">Total Expenses</p>
                   <p className="text-2xl font-bold text-blue-600">
@@ -1219,12 +1221,25 @@ export default function ReportsPage() {
                     {fmt(siteEvalSummary.returnsTotal)}
                   </p>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950">
-                  <p className="text-sm text-muted-foreground">Grand Total</p>
-                  <p className="text-2xl font-bold text-green-600">
+                <div className="text-center p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
+                  <p className="text-sm text-muted-foreground">Net (Exp + Ret)</p>
+                  <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">
                     {fmt(siteEvalSummary.grandTotal)}
                   </p>
                 </div>
+                <div className="text-center p-4 rounded-lg bg-orange-50 dark:bg-orange-950">
+                  <p className="text-sm text-muted-foreground">Total Sales</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {fmt(siteEvalSummary.salesTotal)}
+                  </p>
+                </div>
+              </div>
+              <div className={`text-center p-5 rounded-lg border-2 ${siteEvalSummary.plTotal >= 0 ? "bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700" : "bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700"}`}>
+                <p className="text-sm font-medium text-muted-foreground">Total P &amp; L</p>
+                <p className={`text-3xl font-bold mt-1 ${siteEvalSummary.plTotal >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {siteEvalSummary.plTotal >= 0 ? "" : "-"}{fmt(Math.abs(siteEvalSummary.plTotal))}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Net (Exp + Ret) − Total Sales</p>
               </div>
             </CardContent>
           </Card>

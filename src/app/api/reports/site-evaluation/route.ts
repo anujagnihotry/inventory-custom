@@ -143,6 +143,14 @@ export async function GET(request: NextRequest) {
       Number(returnFreight._sum.freight ?? 0) +
       Number(freightExpense._sum.amount ?? 0);
 
+    // ── 7. SALES ──────────────────────────────────────────────────────────────
+    const saleWhere = { buyerId: bid, ...(jobNo ? { jobNo } : {}) };
+    const salesAgg = await prisma.sale.aggregate({
+      where: saleWhere,
+      _sum: { total: true },
+    });
+    const salesTotal = Number(salesAgg._sum.total ?? 0);
+
     // ── Assemble rows ─────────────────────────────────────────────────────────
     const rows: { buyer: string; name: string; value: number; type: string }[] = [];
 
@@ -161,14 +169,17 @@ export async function GET(request: NextRequest) {
     rows.push({ buyer: buyerName, name: "ACTUAL RETURNED CONSUMABLE",               value: retConsumableValue,  type: "Return" });
     rows.push({ buyer: buyerName, name: "ACTUAL RETURNED (TOOLS, SPARES & ASSETS)", value: retReturnableValue,  type: "Return" });
     rows.push({ buyer: buyerName, name: "Freight",                                  value: freightValue,        type: "Expences" });
+    rows.push({ buyer: buyerName, name: "Total Sales",                              value: -salesTotal,         type: "Sales" });
 
     // ── Summary ───────────────────────────────────────────────────────────────
     const expencesTotal = rows.filter((r) => r.type === "Expences").reduce((s, r) => s + r.value, 0);
     const returnsTotal  = rows.filter((r) => r.type === "Return").reduce((s, r) => s + r.value, 0);
+    const grandTotal    = expencesTotal + returnsTotal;
+    const plTotal       = grandTotal - salesTotal;
 
     return NextResponse.json({
       rows,
-      summary: { expencesTotal, returnsTotal, grandTotal: expencesTotal + returnsTotal },
+      summary: { expencesTotal, returnsTotal, grandTotal, salesTotal, plTotal },
     });
   } catch (error) {
     console.error("Site evaluation error:", error);
