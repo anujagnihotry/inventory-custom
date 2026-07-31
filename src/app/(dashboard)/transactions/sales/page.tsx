@@ -43,6 +43,7 @@ interface SaleDetailRecord {
 
 interface Sale {
   id: number;
+  invoiceNo: string | null;
   date: string;
   consigneeId: number;
   buyerId: number;
@@ -294,6 +295,10 @@ export default function SalesPage() {
   const columns: ColumnDef<Sale>[] = [
     { accessorKey: "id", header: "ID" },
     {
+      accessorKey: "invoiceNo", header: "Invoice No",
+      cell: ({ row }) => row.original.invoiceNo || "-",
+    },
+    {
       accessorKey: "date", header: "Date",
       cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
     },
@@ -353,6 +358,7 @@ export default function SalesPage() {
           <h2 className="text-lg font-semibold">Sale Details</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             {[
+              ["Invoice No", viewingSale.invoiceNo || "-"],
               ["Date", new Date(viewingSale.date).toLocaleDateString()],
               ["Buyer", viewingSale.buyer?.name],
               ["Consignee", viewingSale.consignee?.name],
@@ -439,6 +445,14 @@ export default function SalesPage() {
         <div className="border rounded-lg p-4 space-y-4">
           <h2 className="text-lg font-semibold">Sale Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Invoice No</Label>
+              <Input
+                value={editingId ? (data.find((s) => s.id === editingId)?.invoiceNo ?? "") : "Auto-generated on save"}
+                readOnly
+                className="bg-muted text-muted-foreground"
+              />
+            </div>
             <div className="space-y-2">
               <Label>Date *</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />

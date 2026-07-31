@@ -561,6 +561,7 @@ model Logging {
 
 model Sale {
   id          Int      @id @default(autoincrement())
+  invoiceNo   String?  @db.VarChar(50)
   date        DateTime @db.Date
   consigneeId Int
   buyerId     Int

@@ -87,7 +87,13 @@ export async function POST(request: NextRequest) {
         include: { details: true },
       });
 
-      return sale;
+      // Auto-generate invoice number from the new record ID
+      const invoiceNo = `SALE-${String(sale.id).padStart(5, "0")}`;
+      return tx.sale.update({
+        where: { id: sale.id },
+        data: { invoiceNo },
+        include: { details: true },
+      });
     });
 
     return NextResponse.json(result, { status: 201 });
