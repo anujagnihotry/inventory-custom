@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
     // returnsTotal stored as positive absolute so the UI can show it cleanly
     const returnsTotal  = Math.abs(rows.filter((r) => r.type === "Return").reduce((s, r) => s + r.value, 0));
     const grandTotal    = expencesTotal - returnsTotal;
-    const plTotal       = grandTotal - salesTotal;
+    const plTotal       = salesTotal - grandTotal;
 
     return NextResponse.json({
       rows,

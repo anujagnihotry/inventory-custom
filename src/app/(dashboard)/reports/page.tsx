@@ -1239,7 +1239,7 @@ export default function ReportsPage() {
                 <p className={`text-3xl font-bold mt-1 ${siteEvalSummary.plTotal >= 0 ? "text-green-600" : "text-red-600"}`}>
                   {siteEvalSummary.plTotal >= 0 ? "" : "-"}{fmt(Math.abs(siteEvalSummary.plTotal))}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">Net (Exp - Ret) − Total Sales</p>
+                <p className="text-xs text-muted-foreground mt-1">Total Sales − Net (Exp - Ret)</p>
               </div>
             </CardContent>
           </Card>
