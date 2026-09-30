@@ -15,7 +15,7 @@ const crypto  = require("crypto");
 const bcrypt  = require("bcryptjs");
 const readline = require("readline");
 
-const CHECK_DATES = ["2026-12-01", "2026-12-15", "2027-01-01"];
+const CHECK_DATES = ["2026-12-01", "2026-12-15", "2027-01-01", "2027-02-01", "2027-03-01"];
 
 function derivePassword(secret, date) {
   return crypto

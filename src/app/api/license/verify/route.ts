@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
-const CHECK_DATES = ["2026-12-01", "2026-12-15", "2027-01-01"];
+const CHECK_DATES = ["2026-12-01", "2026-12-15", "2027-01-01", "2027-02-01", "2027-03-01"];
 const COOKIE_NAME = "__lic";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 18; // 18 days — safely covers the longest gap
 

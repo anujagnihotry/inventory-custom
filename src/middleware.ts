@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // ── License check dates (UTC) ─────────────────────────────────────────────
-const CHECK_DATES = ["2026-12-01", "2026-12-15", "2027-01-01"] as const;
+const CHECK_DATES = ["2026-12-01", "2026-12-15", "2027-01-01", "2027-02-01", "2027-03-01"] as const;
 const COOKIE_NAME = "__lic";
 const GATE_PATH   = "/license-gate";
 
